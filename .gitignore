@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.encrypted
+
+# Logs
+logs/*
+*.log
+!logs/.gitkeep
+
+# Data
+data/raw/*
+data/processed/*
+data/cache/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/cache/.gitkeep
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backtesting results
+backtesting/results/*
+!backtesting/results/.gitkeep
+
+# Reports
+reports/*
+!reports/.gitkeep
+
+# Notebooks
+notebooks/.ipynb_checkpoints/
+notebooks/*
+!notebooks/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# AI Agent config (internal)
+AGENTS.md
+.gemini/
