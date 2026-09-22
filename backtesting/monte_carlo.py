@@ -6,7 +6,7 @@ Implements Monte Carlo simulation for statistical validation.
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from copy import deepcopy
 
