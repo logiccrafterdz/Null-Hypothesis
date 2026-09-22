@@ -291,8 +291,24 @@ def generate_sample_data(
     lows = np.minimum(opens, closes) * (1 - rng.uniform(0.001, 0.008, n_candles))
 
     volumes = rng.integers(800, 1500, n_candles).astype(float)
+
+    # Reshape capitulation bars so they satisfy every detector condition
+    # (drop >= 3%, volume spike >= 2x previous-20 average, ATR spike and a
+    # hammer reversal), so a sample backtest actually produces trades.
     for i in range(step, n_candles, spike_step):
-        volumes[i] = rng.integers(1800, 2600)
+        base = closes[i - 1]
+        body = 0.0035 * base
+        close_i = base * (1 + returns[i])
+        open_i = close_i - body
+        low_i = close_i - 25 * body
+        high_i = open_i + 0.5 * body
+        opens[i] = open_i
+        highs[i] = high_i
+        lows[i] = low_i
+        closes[i] = close_i
+        volumes[i] = rng.integers(3500, 5000)
+        if i + 1 < n_candles:
+            closes[i + 1] = close_i * (1 + rng.uniform(0.005, 0.02))
 
     end_time = datetime.now(pytz.UTC).replace(minute=0, second=0, microsecond=0)
     index = pd.date_range(end=end_time, periods=n_candles, freq=f'{minutes}min', tz=pytz.UTC)

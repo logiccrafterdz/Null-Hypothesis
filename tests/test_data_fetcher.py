@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import sys
 from pathlib import Path
+import pytz
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -143,6 +144,43 @@ class TestDataFetcher(unittest.TestCase):
             )
         
         self.assertFalse(result.empty)
+
+    def test_naive_index_mixed_with_aware_dates(self):
+        """Cached data with a naive index must still filter cleanly when the
+        caller supplies tz-aware datetimes (and vice-versa), without
+        tz-comparison crashes."""
+        idx = pd.date_range(end=datetime.now(), periods=200, freq='15min')
+        cached = pd.DataFrame({
+            'open': 100.0,
+            'high': 101.0,
+            'low': 99.0,
+            'close': 100.5,
+            'volume': 1000,
+        }, index=idx)
+
+        aware_idx = idx.tz_localize('UTC')
+        aware = cached.set_axis(aware_idx)
+
+        end_date = datetime.now(pytz.UTC)
+        start_date = end_date - timedelta(days=1)
+
+        with patch.object(self.data_fetcher, 'load_cached_data', return_value=cached):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
+        self.assertFalse(result.empty)
+
+        with patch.object(self.data_fetcher, 'load_cached_data', return_value=aware):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=datetime.now() - timedelta(days=1),
+                end_date=datetime.now()
+            )
+        self.assertFalse(result.empty)
         self.assertTrue((result.index >= start_date).all())
 
     def test_generate_sample_data(self):
@@ -159,6 +197,22 @@ class TestDataFetcher(unittest.TestCase):
         # Seeded generation is reproducible
         df2 = generate_sample_data(asset="XAUUSD", days=7, timeframe="M15", seed=42)
         pd.testing.assert_frame_equal(df, df2)
+
+    def test_generate_sample_data_triggers_detector(self):
+        """Capitulation candles in sample data must pass the production
+        detector so a local demo backtest actually produces trades."""
+        from src.utils.helpers import generate_sample_data
+        from src.core.market_analyzer import MarketAnalyzer
+
+        df = generate_sample_data(asset="XAUUSD", days=7, timeframe="M15", seed=42)
+        analyzer = MarketAnalyzer()
+        signals = 0
+        for i in range(60, len(df)):
+            sub = df.iloc[max(0, i - 40):i + 1]
+            if analyzer.detect_bad_luck_moment(sub, "XAUUSD", sub.index[-1]):
+                signals += 1
+
+        self.assertGreater(signals, 0)
 
 
 if __name__ == '__main__':

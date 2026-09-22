@@ -18,9 +18,18 @@ from config.settings import (
 )
 from src.api.broker_interface import UnifiedBroker
 from src.utils.logger import get_logger
-from src.utils.helpers import clean_data, resample_ohlcv, validate_ohlcv_data
+from src.utils.helpers import clean_data, resample_ohlcv, validate_ohlcv_data, ensure_utc
 
 logger = get_logger()
+
+
+def _in_range(index, start_date, end_date):
+    """Zone-blind range mask: interpret naive indices as UTC and compare
+    against UTC-normalized bounds so callers and caches never crash on
+    tz-naive vs tz-aware mismatches."""
+    if index.tz is None:
+        index = index.tz_localize('UTC')
+    return (index >= ensure_utc(start_date)) & (index <= ensure_utc(end_date))
 
 
 class DataFetcher:
@@ -204,13 +213,16 @@ class DataFetcher:
         if start_date is None:
             start_date = end_date - timedelta(days=30)
         
+        # Normalize to aware UTC so naive datetimes supplied by callers
+        # (e.g. CLI backtest mode) compare cleanly against aware indices.
+        start_date = ensure_utc(start_date)
+        end_date = ensure_utc(end_date)
+        
         # Local data source: read local fixtures only, never contact the broker.
         if DATA_SOURCE == "local":
             cached_df = self.load_cached_data(symbol, timeframe, "raw")
             if cached_df is not None and not cached_df.empty:
-                filtered_df = cached_df[
-                    (cached_df.index >= start_date) & (cached_df.index <= end_date)
-                ]
+                filtered_df = cached_df[_in_range(cached_df.index, start_date, end_date)]
                 if not filtered_df.empty:
                     self.logger.info(f"Using cached data for {symbol} {timeframe}")
                     return filtered_df
@@ -231,9 +243,9 @@ class DataFetcher:
             if cached_df is not None and not cached_df.empty:
                 # Check if we need to update
                 last_cached_date = cached_df.index.max()
-                if last_cached_date >= start_date:
+                if ensure_utc(last_cached_date) >= start_date:
                     # Filter to requested range
-                    filtered_df = cached_df[(cached_df.index >= start_date) & (cached_df.index <= end_date)]
+                    filtered_df = cached_df[_in_range(cached_df.index, start_date, end_date)]
                     
                     if not filtered_df.empty:
                         self.logger.info(f"Using cached data for {symbol} {timeframe}")
@@ -255,7 +267,7 @@ class DataFetcher:
         cached_df = self.load_cached_data(symbol, timeframe, "raw")
         if cached_df is not None and not cached_df.empty:
             self.logger.warning(f"Using cached data as fallback for {symbol} {timeframe}")
-            filtered_df = cached_df[(cached_df.index >= start_date) & (cached_df.index <= end_date)]
+            filtered_df = cached_df[_in_range(cached_df.index, start_date, end_date)]
             return filtered_df
         
         self.logger.error(f"No data available for {symbol} {timeframe}")

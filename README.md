@@ -25,6 +25,13 @@ According to some simulations we ran:
 - Max drawdown: -10.6% (sounds too good to be true)
 - Total return: 30.66% (definitely won't be this good in practice)
 
+> **Note:** These figures were produced by an earlier, buggy backtesting
+> engine (exit orders were not actually executed, position sizing used the
+> wrong units, and the detector used hardcoded thresholds). They are **not
+> valid** until the backtest is re-run with the corrected code. Re-generate
+> them with `python main.py --mode backtest --asset XAUUSD --days 365`
+> after seeding local data with `python main.py --generate-sample-data`.
+
 ## How to Use
 
 ```bash

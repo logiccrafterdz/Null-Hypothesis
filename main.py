@@ -18,6 +18,7 @@ from src.core.data_fetcher import DataFetcher
 from src.core.risk_manager import RiskManager
 from src.core.trade_executor import TradeExecutor
 from src.strategies.bad_luck_strategy import BadLuckStrategy
+from src.utils.helpers import ensure_utc
 from src.utils.logger import get_logger
 from config.credentials import get_mt5_credentials
 
@@ -88,7 +89,7 @@ def run_backtest_mode(components: dict, args):
     
     # Get data for backtesting
     asset = args.asset or list(ASSETS.keys())[0]
-    end_date = datetime.now()
+    end_date = ensure_utc(datetime.now())
     start_date = end_date - timedelta(days=args.days)
     
     logger.info(f"Fetching data for {asset} from {start_date} to {end_date}")
@@ -124,8 +125,8 @@ def run_backtest_mode(components: dict, args):
     criteria_check = backtester.check_success_criteria(result)
     print("\nSuccess Criteria Check:")
     for criterion, passed in criteria_check.items():
-        status = "✓" if passed else "✗"
-        print(f"  {status} {criterion}: {passed}")
+        status = "PASS" if passed else "FAIL"
+        print(f"  [{status}] {criterion}: {passed}")
     
     # Run walk-forward if requested
     if args.walk_forward:
