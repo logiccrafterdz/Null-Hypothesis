@@ -54,6 +54,9 @@ LOG_FILE_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
 LOG_FILE_BACKUP_COUNT = 5
 
 # News blackout windows configuration
+# All windows are expressed in MARKET_SESSION_TIMEZONE (UTC).
+MARKET_SESSION_TIMEZONE = "UTC"
+
 NEWS_BLACKOUT_WINDOWS = [
     {
         "day_of_week": 2,  # Wednesday (0=Monday, 6=Sunday)

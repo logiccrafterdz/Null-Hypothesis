@@ -11,6 +11,25 @@ from typing import Dict, List, Optional, Tuple
 import pytz
 
 from config.strategy_params import SYMBOL_METADATA
+from config.settings import MARKET_SESSION_TIMEZONE
+
+
+def ensure_utc(dt: datetime) -> datetime:
+    """
+    Normalize a datetime to an aware UTC datetime.
+
+    Naive datetimes are interpreted as UTC (the system-wide convention
+    used by news windows, data timestamps, and session times).
+
+    Args:
+        dt: Datetime (naive or aware)
+
+    Returns:
+        Aware datetime in UTC
+    """
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=pytz.UTC)
+    return dt.astimezone(pytz.UTC)
 
 
 def format_currency(value: float, currency: str = "USD") -> str:
@@ -290,7 +309,7 @@ def generate_sample_data(
 def is_trading_hours(
     dt: datetime,
     asset: str,
-    timezone: str = 'UTC'
+    timezone: Optional[str] = None
 ) -> bool:
     """
     Check if given datetime is within trading hours for asset.
@@ -298,20 +317,25 @@ def is_trading_hours(
     Args:
         dt: Datetime to check
         asset: Asset symbol
-        timezone: Timezone string
+        timezone: Timezone string (defaults to MARKET_SESSION_TIMEZONE)
         
     Returns:
         True if within trading hours
     """
+    if timezone is None:
+        timezone = MARKET_SESSION_TIMEZONE
     tz = pytz.timezone(timezone)
-    dt = dt.astimezone(tz)
+    dt = ensure_utc(dt).astimezone(tz)
     
-    # Forex trading hours (roughly)
+    # Forex trading hours (roughly), expressed in the session timezone:
+    # market opens Sunday at 17:00 and closes Friday at 17:00.
+    # weekday(): Monday=0 ... Friday=4, Saturday=5, Sunday=6.
     if asset in ['EURUSD', 'GBPJPY', 'XAUUSD']:
-        # Sunday 5pm to Friday 5pm EST
         if dt.weekday() == 6:  # Sunday
             return dt.hour >= 17
-        elif dt.weekday() == 5:  # Friday
+        elif dt.weekday() == 5:  # Saturday
+            return False
+        elif dt.weekday() == 4:  # Friday
             return dt.hour < 17
         else:  # Monday to Thursday
             return True

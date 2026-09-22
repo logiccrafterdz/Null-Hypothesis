@@ -22,7 +22,7 @@ from src.utils.indicators import (
     calculate_volume_sma,
     is_reversal_pattern
 )
-from src.utils.helpers import is_trading_hours
+from src.utils.helpers import is_trading_hours, ensure_utc
 
 logger = get_logger()
 
@@ -209,7 +209,7 @@ class MarketAnalyzer:
             try:
                 # Get timezone for this window
                 tz = pytz.timezone(window['timezone'])
-                localized_time = current_time.astimezone(tz)
+                localized_time = ensure_utc(current_time).astimezone(tz)
                 
                 # Check if day matches
                 if localized_time.weekday() == window['day_of_week']:
@@ -242,6 +242,10 @@ class MarketAnalyzer:
         """
         if current_time is None:
             current_time = datetime.now(pytz.UTC)
+        else:
+            # Interpret naive datetimes as UTC so trading/news windows
+            # are always evaluated consistently.
+            current_time = ensure_utc(current_time)
         
         # Check if within trading hours
         if not is_trading_hours(current_time, asset):
