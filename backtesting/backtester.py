@@ -19,7 +19,8 @@ from config.strategy_params import (
     SUCCESS_CRITERIA
 )
 from src.utils.logger import get_logger
-from src.utils.indicators import calculate_atr
+from src.core.market_analyzer import MarketAnalyzer
+from src.core.decision_engine import DecisionEngine
 
 
 class BacktestStatus(Enum):
@@ -125,12 +126,19 @@ class Backtester:
     Simulates trading with realistic costs and slippage.
     """
     
-    def __init__(self, initial_capital: Optional[float] = None):
+    def __init__(
+        self,
+        initial_capital: Optional[float] = None,
+        market_analyzer: Optional[MarketAnalyzer] = None,
+        decision_engine: Optional[DecisionEngine] = None
+    ):
         """
         Initialize backtester.
         
         Args:
             initial_capital: Initial capital (defaults to settings)
+            market_analyzer: Market analyzer (defaults to production instance)
+            decision_engine: Decision engine (defaults to production instance)
         """
         self.initial_capital = initial_capital or BACKTESTING_INITIAL_CAPITAL
         self.commission = BACKTESTING_COMMISSION
@@ -138,6 +146,10 @@ class Backtester:
         self.slippage = BACKTESTING_SLIPPAGE
         
         self.logger = get_logger()
+        
+        # Production detection pipeline (same as live trading)
+        self.analyzer = market_analyzer or MarketAnalyzer()
+        self.decision_engine = decision_engine or DecisionEngine()
         
         # Strategy parameters
         self.stop_loss_pct = TRADE_MANAGEMENT['stop_loss_pct']
@@ -260,53 +272,36 @@ class Backtester:
         current_time: datetime
     ) -> Optional[Dict[str, any]]:
         """
-        Check for trading signal (simplified bad luck moment detection).
-        
+        Check for trading signal using the production bad luck moment detector.
+
+        Uses the exact same MarketAnalyzer + DecisionEngine pipeline as live
+        trading so the backtest reflects production thresholds (drop 3%,
+        volume 2x, ATR 1.5x and reversal patterns).
+
         Args:
             data: Historical data
             asset: Asset symbol
             current_time: Current time
-            
+
         Returns:
             Signal dictionary or None
         """
         if len(data) < 20:
             return None
-        
-        # Simplified bad luck moment detection
-        current_close = data['close'].iloc[-1]
-        previous_close = data['close'].iloc[-2]
-        current_volume = data['volume'].iloc[-1]
-        avg_volume = data['volume'].iloc[-20:-1].mean()
-        
-        # Price drop
-        drop_pct = (previous_close - current_close) / previous_close
-        if drop_pct < 0.02:  # Less than 2% drop
+
+        # Production detection pipeline
+        moment = self.analyzer.detect_bad_luck_moment(data, asset, current_time)
+        if moment is None:
             return None
-        
-        # Volume spike
-        volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
-        if volume_ratio < 1.5:  # Less than 1.5x volume
+
+        # Organized randomness decision (same engine as live trading)
+        should_enter, _ = self.decision_engine.decide_on_bad_luck_moment(moment)
+        if not should_enter:
             return None
-        
-        # Volatility check
-        atr = calculate_atr(data, 14)
-        if len(atr) < 2:
-            return None
-        
-        current_atr = atr.iloc[-1]
-        avg_atr = atr.iloc[-20:-1].mean()
-        if avg_atr > 0 and current_atr / avg_atr < 1.3:
-            return None
-        
-        # Random decision (simplified)
-        import random
-        if random.random() > 0.6:  # 60% entry probability
-            return None
-        
+
         return {
             'direction': 'LONG',
-            'entry_price': current_close,
+            'entry_price': data['close'].iloc[-1],
             'confidence': 1.0
         }
     
