@@ -144,6 +144,10 @@ class Backtester:
         self.take_profit_pct = TRADE_MANAGEMENT['take_profit_pct']
         self.position_size_risk = TRADE_MANAGEMENT['position_size_risk']
         self.max_open_trades = RISK_MANAGEMENT['max_open_trades']
+        self.trailing_stop = TRADE_MANAGEMENT['trailing_stop']
+        self.trailing_activation_pct = TRADE_MANAGEMENT['trailing_activation_pct']
+        self.trailing_distance_pct = TRADE_MANAGEMENT['trailing_distance_pct']
+        self.max_duration_candles = TRADE_MANAGEMENT['max_duration_candles']
     
     def run_backtest(
         self,
@@ -184,12 +188,24 @@ class Backtester:
                 current_time = data.index[i]
                 row = data.iloc[i]
                 
+                # Monitor open positions (opened on previous bars)
+                open_positions, closed_trades = self._monitor_positions(
+                    open_positions,
+                    row,
+                    current_time
+                )
+                
+                # Settle closed trades
+                for closed_trade in closed_trades:
+                    trades.append(closed_trade)
+                    capital += closed_trade.pnl
+                
                 # Check for bad luck moment
                 signal = self._check_signal(data.iloc[:i+1], asset, current_time)
                 
                 if signal and len(open_positions) < self.max_open_trades:
                     # Execute trade
-                    trade = self._execute_trade(
+                    position = self._execute_trade(
                         signal,
                         row,
                         capital,
@@ -197,16 +213,9 @@ class Backtester:
                         current_time
                     )
                     
-                    if trade:
-                        open_positions.append(trade)
-                        capital -= trade.size * trade.entry_price * self.commission
-                
-                # Monitor open positions
-                open_positions = self._monitor_positions(
-                    open_positions,
-                    row,
-                    current_time
-                )
+                    if position:
+                        open_positions.append(position)
+                        capital -= position['size'] * position['entry_price'] * self.commission
                 
                 # Update equity
                 open_pnl = sum(p['current_pnl'] for p in open_positions)
@@ -350,7 +359,9 @@ class Backtester:
             'take_profit': take_profit_price,
             'current_pnl': 0.0,
             'max_profit': 0.0,
-            'max_loss': 0.0
+            'max_loss': 0.0,
+            'bars_held': 0,
+            'trailing_active': False
         }
     
     def _monitor_positions(
@@ -358,67 +369,107 @@ class Backtester:
         open_positions: List[Dict],
         row: pd.Series,
         current_time: datetime
-    ) -> List[Dict]:
+    ) -> Tuple[List[Dict], List[BacktestTrade]]:
         """
-        Monitor and update open positions.
-        
+        Monitor and update open positions, closing them on exit conditions.
+
         Args:
             open_positions: List of open positions
             row: Current data row
             current_time: Current time
-            
+
         Returns:
-            Updated list of open positions
+            Tuple of (remaining_positions, closed_trades)
         """
         current_price = row['close']
+        bar_high = row['high']
+        bar_low = row['low']
         remaining_positions = []
-        
+        closed_positions = []
+
         for position in open_positions:
             direction = position['direction']
             entry_price = position['entry_price']
             stop_loss = position['stop_loss']
             take_profit = position['take_profit']
-            
+
+            # Track how many bars the position has been held
+            bars_held = position.get('bars_held', 0) + 1
+            position['bars_held'] = bars_held
+
             # Calculate current PnL
-            if direction == 'LONG':
-                pnl_pct = (current_price - entry_price) / entry_price
-            else:
-                pnl_pct = (entry_price - current_price) / entry_price
-            
-            position['current_pnl'] = position['size'] * (current_price - entry_price) if direction == 'LONG' else position['size'] * (entry_price - current_price)
-            
+            current_pnl = position['size'] * (current_price - entry_price) if direction == 'LONG' else position['size'] * (entry_price - current_price)
+            position['current_pnl'] = current_pnl
+
+            pnl_pct = (current_price - entry_price) / entry_price if direction == 'LONG' else (entry_price - current_price) / entry_price
+
             # Update max profit/loss
             if pnl_pct > position['max_profit']:
                 position['max_profit'] = pnl_pct
             if pnl_pct < position['max_loss']:
                 position['max_loss'] = pnl_pct
-            
-            # Check exit conditions
+
+            # Trailing stop logic
+            trailing_active = position.get('trailing_active', False)
+            if self.trailing_stop and pnl_pct >= self.trailing_activation_pct:
+                if direction == 'LONG':
+                    new_stop = current_price * (1 - self.trailing_distance_pct)
+                    if new_stop > stop_loss:
+                        stop_loss = new_stop
+                        position['stop_loss'] = new_stop
+                        trailing_active = True
+                        position['trailing_active'] = True
+                else:
+                    new_stop = current_price * (1 + self.trailing_distance_pct)
+                    if new_stop < stop_loss:
+                        stop_loss = new_stop
+                        position['stop_loss'] = new_stop
+                        trailing_active = True
+                        position['trailing_active'] = True
+
+            # Check exit conditions using the bar's full range
             should_close = False
             exit_reason = ""
-            
+            exit_price = current_price
+
             if direction == 'LONG':
-                if current_price <= stop_loss:
+                if stop_loss is not None and bar_low <= stop_loss:
                     should_close = True
-                    exit_reason = "Stop Loss"
-                elif current_price >= take_profit:
+                    exit_reason = "Trailing Stop" if trailing_active else "Stop Loss"
+                    exit_price = stop_loss
+                elif take_profit is not None and bar_high >= take_profit:
                     should_close = True
                     exit_reason = "Take Profit"
+                    exit_price = take_profit
             else:
-                if current_price >= stop_loss:
+                if stop_loss is not None and bar_high >= stop_loss:
                     should_close = True
-                    exit_reason = "Stop Loss"
-                elif current_price <= take_profit:
+                    exit_reason = "Trailing Stop" if trailing_active else "Stop Loss"
+                    exit_price = stop_loss
+                elif take_profit is not None and bar_low <= take_profit:
                     should_close = True
                     exit_reason = "Take Profit"
-            
+                    exit_price = take_profit
+
+            # Max duration check
+            if not should_close and bars_held >= self.max_duration_candles:
+                should_close = True
+                exit_reason = "MAX_DURATION_REACHED"
+                exit_price = current_price
+
             if should_close:
-                # Trade will be closed in next iteration
-                remaining_positions.append(position)
+                closed_trade = self._close_position(
+                    position,
+                    exit_price,
+                    current_time,
+                    exit_reason
+                )
+                if closed_trade:
+                    closed_positions.append(closed_trade)
             else:
                 remaining_positions.append(position)
-        
-        return remaining_positions
+
+        return remaining_positions, closed_positions
     
     def _close_position(
         self,
