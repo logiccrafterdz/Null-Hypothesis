@@ -4,6 +4,8 @@ Handles Telegram notifications for trading events.
 """
 
 import asyncio
+import queue
+import threading
 from typing import Optional, Dict, Any
 from datetime import datetime
 
@@ -21,15 +23,22 @@ logger = get_logger()
 
 
 class NotificationManager:
-    """Manages trading notifications via Telegram."""
-    
+    """Manages trading notifications via Telegram.
+
+    Delivery happens on a background worker thread so the strategy and
+    trade-execution loops never block waiting on the Telegram API.
+    """
+
     def __init__(self):
         """Initialize notification manager."""
         self.enabled = TELEGRAM_ENABLED and TELEGRAM_AVAILABLE
         self.chat_id = TELEGRAM_CHAT_ID
         self.bot_token = TELEGRAM_TOKEN
         self.bot = None
-        
+        self._queue: "queue.Queue[Optional[str]]" = queue.Queue()
+        self._worker_started = False
+        self._worker = None
+
         if self.enabled and self.bot_token:
             try:
                 self.bot = Bot(token=self.bot_token)
@@ -37,20 +46,20 @@ class NotificationManager:
             except Exception as e:
                 logger.error(f"Failed to initialize Telegram bot: {e}")
                 self.enabled = False
-    
+
     async def send_message(self, message: str) -> bool:
         """
         Send message via Telegram.
-        
+
         Args:
             message: Message to send
-            
+
         Returns:
             True if successful
         """
         if not self.enabled or not self.bot or not self.chat_id:
             return False
-        
+
         try:
             await self.bot.send_message(
                 chat_id=self.chat_id,
@@ -65,26 +74,74 @@ class NotificationManager:
         except Exception as e:
             logger.error(f"Unexpected error sending message: {e}")
             return False
-    
+
+    def _ensure_worker(self) -> None:
+        """Start the background sender thread on first use."""
+        if not self._worker_started:
+            self._worker_started = True
+            self._worker = threading.Thread(
+                target=self._sender_loop,
+                daemon=True,
+                name="telegram-notifier"
+            )
+            self._worker.start()
+
+    def _sender_loop(self) -> None:
+        """Drain the message queue and deliver asynchronously in background."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        while True:
+            message = self._queue.get()
+            if message is None:
+                break
+            try:
+                loop.run_until_complete(self.send_message(message))
+            except Exception as e:
+                logger.error(f"Notification sender error: {e}")
+
+    def _enqueue(self, message: str) -> bool:
+        """
+        Queue a message for non-blocking delivery.
+
+        Args:
+            message: Message to send
+
+        Returns:
+            True if the message was accepted for delivery
+        """
+        if not self.enabled or not self.bot or not self.chat_id:
+            return False
+        self._ensure_worker()
+        self._queue.put(message)
+        return True
+
+    def shutdown(self) -> None:
+        """Stop the background sender thread (idempotent)."""
+        if self._worker_started:
+            self._queue.put(None)
+            if self._worker:
+                self._worker.join(timeout=2.0)
+            self._worker_started = False
+
     def send_sync(self, message: str) -> bool:
         """
         Send message synchronously (wrapper for async).
-        
+
         Args:
             message: Message to send
-            
+
         Returns:
             True if successful
         """
         if not self.enabled:
             return False
-        
+
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        
+
         return loop.run_until_complete(self.send_message(message))
     
     def notify_trade_entry(
@@ -124,7 +181,7 @@ class NotificationManager:
 🧠 <b>Strategy:</b> {strategy}
 ⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
-        return self.send_sync(message)
+        return self._enqueue(message)
     
     def notify_trade_exit(
         self,
@@ -157,7 +214,7 @@ class NotificationManager:
 📝 <b>Reason:</b> {reason}
 ⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
-        return self.send_sync(message)
+        return self._enqueue(message)
     
     def notify_bad_luck_moment(
         self,
@@ -192,7 +249,7 @@ class NotificationManager:
         if random_value is not None:
             message += f"\n🎲 <b>Random Value:</b> {random_value:.4f}"
         
-        return self.send_sync(message)
+        return self._enqueue(message)
     
     def notify_risk_event(
         self,
@@ -223,7 +280,7 @@ class NotificationManager:
 📝 <b>Details:</b> {details}
 ⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
-        return self.send_sync(message)
+        return self._enqueue(message)
     
     def notify_daily_report(
         self,
@@ -253,7 +310,7 @@ class NotificationManager:
 📉 <b>Max Drawdown:</b> {max_drawdown:.2f}%
 ⏰ <b>Date:</b> {datetime.now().strftime('%Y-%m-%d')}
 """
-        return self.send_sync(message)
+        return self._enqueue(message)
     
     def notify_error(self, error_type: str, error_message: str) -> bool:
         """
@@ -273,7 +330,7 @@ class NotificationManager:
 📝 <b>Message:</b> {error_message}
 ⏰ <b>Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
-        return self.send_sync(message)
+        return self._enqueue(message)
 
 
 # Global notification manager instance
