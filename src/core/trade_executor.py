@@ -19,7 +19,6 @@ from src.api.broker_interface import (
 )
 from src.core.risk_manager import RiskManager
 from src.utils.logger import get_logger
-from src.utils.helpers import calculate_position_size
 from src.utils.notifications import get_notification_manager
 
 logger = get_logger()

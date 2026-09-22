@@ -165,16 +165,16 @@ class RiskManager:
         stop_loss_price: Optional[float] = None
     ) -> float:
         """
-        Calculate position size based on risk percentage with pip value integration.
-        
+        Calculate position size in MT5 lots based on risk percentage.
+
         Args:
             account_info: Account information
             entry_price: Entry price
-            asset: Asset symbol for pip calculation
+            asset: Asset symbol for contract metadata
             stop_loss_price: Stop loss price (calculated if not provided)
-            
+
         Returns:
-            Position size in units
+            Position size in MT5 lots (0.0 if it cannot be sized safely)
         """
         capital = self.get_current_capital(account_info)
         
@@ -182,7 +182,7 @@ class RiskManager:
         if stop_loss_price is None:
             stop_loss_price = entry_price * (1 - self.stop_loss_pct)
         
-        # Calculate position size with pip value integration
+        # Calculate position size in lots (contract-aware, broker-bounded)
         position_size = calculate_position_size(
             capital=capital,
             risk_percentage=self.position_size_risk,
@@ -191,11 +191,17 @@ class RiskManager:
             asset=asset
         )
         
-        # Check against maximum position size per asset
-        max_size = capital * self.max_position_size_per_asset
-        if position_size > max_size:
-            position_size = max_size
-            self.logger.debug(f"Position size limited to max: {max_size}")
+        if position_size <= 0:
+            return position_size
+        
+        # Cap position in lot units relative to the risk budget
+        # (max_position_size_per_asset = 5% vs position_size_risk = 2%)
+        max_lots = position_size * (
+            self.max_position_size_per_asset / self.position_size_risk
+        )
+        if position_size > max_lots:
+            position_size = max_lots
+            self.logger.debug(f"Position size limited to max: {max_lots}")
         
         return position_size
     

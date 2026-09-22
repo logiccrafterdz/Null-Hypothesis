@@ -220,13 +220,48 @@ class MT5Connector(BrokerInterface):
         
         return tick_info.bid
     
+    def _validate_lot(
+        self,
+        symbol: str,
+        volume: float,
+        symbol_info
+    ) -> float:
+        """
+        Validate and normalize an order volume against broker constraints.
+
+        Args:
+            symbol: Asset symbol
+            volume: Requested volume in lots
+            symbol_info: MT5 symbol info
+
+        Returns:
+            Volume rounded/clamped to broker lot step and limits
+
+        Raises:
+            Exception: if volume is below the broker minimum lot
+        """
+        if volume < symbol_info.volume_min:
+            raise Exception(
+                f"Volume {volume} below minimum {symbol_info.volume_min} for {symbol}"
+            )
+        if volume > symbol_info.volume_max:
+            logger.warning(
+                f"Volume {volume} above maximum {symbol_info.volume_max} for {symbol}, clamping"
+            )
+            volume = symbol_info.volume_max
+
+        if symbol_info.volume_step and symbol_info.volume_step > 0:
+            volume = round(volume / symbol_info.volume_step) * symbol_info.volume_step
+
+        return volume
+
     def place_order(self, order: Order) -> str:
         """
         Place order on MT5.
-        
+
         Args:
             order: Order object
-            
+
         Returns:
             Order ID
         """
@@ -236,6 +271,8 @@ class MT5Connector(BrokerInterface):
         symbol_info = mt5.symbol_info(order.symbol)
         if symbol_info is None:
             raise Exception(f"Symbol {order.symbol} not found")
+        
+        volume = self._validate_lot(order.symbol, order.size, symbol_info)
         
         # Determine order type
         if order.direction == 'BUY':
@@ -249,7 +286,7 @@ class MT5Connector(BrokerInterface):
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": order.symbol,
-            "volume": order.size,
+            "volume": volume,
             "type": trade_type,
             "price": price,
             "sl": order.stop_loss,

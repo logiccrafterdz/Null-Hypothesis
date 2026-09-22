@@ -41,11 +41,12 @@ class TestRiskManager(unittest.TestCase):
         self.assertEqual(self.risk_manager.consecutive_losses, 0)
     
     def test_calculate_position_size(self):
-        """Test position size calculation."""
-        entry_price = 100.0
+        """Test position size calculation returns valid MT5 lots."""
+        entry_price = 2000.0
         position_size = self.risk_manager.calculate_position_size(
             self.account_info,
-            entry_price
+            entry_price,
+            asset="XAUUSD"
         )
         
         self.assertGreater(position_size, 0)
@@ -195,35 +196,42 @@ class TestRiskManager(unittest.TestCase):
         self.assertIn('consecutive_losses', summary)
         self.assertIn('max_positions', summary)
     
-    def test_position_sizing_with_pip_value(self):
-        """Test position sizing with pip value integration for different assets."""
-        # Test EURUSD (4 decimal places)
+    def test_position_sizing_returns_mt5_lots(self):
+        """Test position sizing returns correct MT5 lots per asset."""
+        # EURUSD @ 1.1000: 0.12121 lots -> rounds down to 0.12 lots
         position_size_eur = self.risk_manager.calculate_position_size(
             account_info=self.account_info,
             entry_price=1.1000,
             asset="EURUSD"
         )
-        self.assertGreater(position_size_eur, 0)
+        self.assertAlmostEqual(position_size_eur, 0.12, places=6)
         
-        # Test XAUUSD (1 decimal place)
+        # XAUUSD @ 2000.0: 0.06667 lots -> rounds down to 0.06 lots
         position_size_xau = self.risk_manager.calculate_position_size(
             account_info=self.account_info,
             entry_price=2000.0,
             asset="XAUUSD"
         )
-        self.assertGreater(position_size_xau, 0)
-        
-        # Test USDJPY (2 decimal places)
-        position_size_jpy = self.risk_manager.calculate_position_size(
+        self.assertAlmostEqual(position_size_xau, 0.06, places=6)
+
+    def test_position_sizing_refuses_below_minimum_lot(self):
+        """Sizes below the broker minimum lot are refused (return 0.0)."""
+        # GBPJPY @ 150: risk budget covers only ~0.0009 lots (< min 0.01)
+        position_size = self.risk_manager.calculate_position_size(
             account_info=self.account_info,
             entry_price=150.00,
-            asset="USDJPY"
+            asset="GBPJPY"
         )
-        self.assertGreater(position_size_jpy, 0)
-        
-        # Position sizes should differ due to pip value calculations
-        # XAUUSD should be smaller due to larger pip size
-        self.assertNotEqual(position_size_eur, position_size_xau)
+        self.assertEqual(position_size, 0.0)
+
+    def test_position_sizing_unknown_asset_raises(self):
+        """Unknown assets fail loudly instead of silently sizing wrong units."""
+        with self.assertRaises(ValueError):
+            self.risk_manager.calculate_position_size(
+                account_info=self.account_info,
+                entry_price=1.1000,
+                asset="NOT_A_SYMBOL"
+            )
 
 
 if __name__ == '__main__':

@@ -174,3 +174,31 @@ SUCCESS_CRITERIA = {
     "min_sharpe_ratio": 0.5,
     "min_trades": 100,
 }
+
+# Symbol metadata for MT5 position sizing (lots)
+# contract_size: units of the underlying instrument per 1.0 lot
+# min_lot / max_lot / lot_step: broker trading volume constraints
+# pip_location: decimal places for pip calculations
+SYMBOL_METADATA = {
+    "XAUUSD": {
+        "contract_size": 100,
+        "min_lot": 0.01,
+        "max_lot": 50.0,
+        "lot_step": 0.01,
+        "pip_location": 1,
+    },
+    "EURUSD": {
+        "contract_size": 100000,
+        "min_lot": 0.01,
+        "max_lot": 50.0,
+        "lot_step": 0.01,
+        "pip_location": 4,
+    },
+    "GBPJPY": {
+        "contract_size": 100000,
+        "min_lot": 0.01,
+        "max_lot": 50.0,
+        "lot_step": 0.01,
+        "pip_location": 2,
+    },
+}

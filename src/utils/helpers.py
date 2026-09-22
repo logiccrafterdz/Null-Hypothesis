@@ -3,11 +3,14 @@ Helper Functions for Phoenix Protocol Trading System
 Common utility functions used across the system.
 """
 
+import math
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import pytz
+
+from config.strategy_params import SYMBOL_METADATA
 
 
 def format_currency(value: float, currency: str = "USD") -> str:
@@ -46,33 +49,55 @@ def calculate_position_size(
     asset: str = "EURUSD"
 ) -> float:
     """
-    Calculate position size based on risk percentage with pip value integration.
-    
+    Calculate position size in MT5 lots based on risk percentage.
+
+    Converts the risk-budgeted position into broker lots using the
+    configured contract size, then rounds down to the lot step and clamps
+    to the broker's min/max lot. If the computed size falls below the
+    minimum lot, 0.0 is returned so the caller refuses to open an
+    oversized position instead of silently trading wrong units.
+
     Args:
         capital: Available capital
         risk_percentage: Risk per trade (0.02 = 2%)
         stop_loss_pct: Stop loss percentage (0.015 = 1.5%)
         entry_price: Entry price
-        asset: Asset symbol for pip calculation
-        
+        asset: Asset symbol (must exist in SYMBOL_METADATA)
+
     Returns:
-        Position size in units
+        Position size in MT5 lots (0.0 if it cannot be sized safely)
     """
+    metadata = SYMBOL_METADATA.get(asset)
+    if metadata is None:
+        raise ValueError(
+            f"Unknown asset '{asset}' for position sizing; "
+            "add it to config.strategy_params.SYMBOL_METADATA"
+        )
+
+    contract_size = metadata['contract_size']
+    min_lot = metadata['min_lot']
+    max_lot = metadata['max_lot']
+    lot_step = metadata['lot_step']
+
     risk_amount = capital * risk_percentage
     stop_loss_amount = entry_price * stop_loss_pct
-    
-    # Get pip location for asset
-    pip_location = get_pip_location(asset)
-    
-    # Calculate position size with pip value consideration
-    position_size = risk_amount / stop_loss_amount
-    
-    # Adjust for pip value if applicable
-    if pip_location:
-        pip_size = 10 ** (-pip_location)
-        position_size = position_size / pip_size
-    
-    return position_size
+
+    if stop_loss_amount <= 0:
+        return 0.0
+
+    # Size in units of the underlying instrument, then convert to lots
+    size_units = risk_amount / stop_loss_amount
+    size_lots = size_units / contract_size
+
+    # Refuse to trade if the risk budget cannot cover a minimum lot
+    if size_lots < min_lot:
+        return 0.0
+
+    # Round down to the broker lot step so risk never exceeds the budget
+    size_lots = math.floor(size_lots / lot_step) * lot_step
+
+    # Clamp to the broker's maximum lot
+    return min(size_lots, max_lot)
 
 
 def get_pip_location(asset: str) -> int:
