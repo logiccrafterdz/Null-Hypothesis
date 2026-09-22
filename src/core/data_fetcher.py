@@ -207,6 +207,26 @@ class DataFetcher:
         if start_date is None:
             start_date = end_date - timedelta(days=30)
         
+        # Local data source: read local fixtures only, never contact the broker.
+        if DATA_SOURCE == "local":
+            cached_df = self.load_cached_data(symbol, timeframe, "raw")
+            if cached_df is not None and not cached_df.empty:
+                filtered_df = cached_df[
+                    (cached_df.index >= start_date) & (cached_df.index <= end_date)
+                ]
+                if not filtered_df.empty:
+                    self.logger.info(f"Using cached data for {symbol} {timeframe}")
+                    return filtered_df
+
+            # Fail loudly instead of silently returning empty data that
+            # silently cripples backtests/live runs.
+            raise ValueError(
+                f"DATA_SOURCE='local' has no cached data for {symbol} {timeframe} "
+                f"covering {start_date} to {end_date}. Generate fixtures with "
+                f"'python main.py --generate-sample-data' or place a file at "
+                f"{self.get_data_path(symbol, timeframe, 'raw')}."
+            )
+        
         # Try to load cached data
         if not force_refresh and DATA_SOURCE != "live":
             cached_df = self.load_cached_data(symbol, timeframe, "raw")

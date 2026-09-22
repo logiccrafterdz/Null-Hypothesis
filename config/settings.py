@@ -38,6 +38,10 @@ TIMEFRAMES = {
 }
 
 # Data settings
+# local:  read only from data/raw fixtures; fails loudly when absent
+#         (seed fixtures with: python main.py --generate-sample-data)
+# live:   always fetch from broker
+# hybrid: fetch from broker, fall back to cache
 DATA_SOURCE = "local"  # Options: local, live, hybrid
 DATA_UPDATE_INTERVAL = 60  # seconds
 DATA_RETENTION_DAYS = 365

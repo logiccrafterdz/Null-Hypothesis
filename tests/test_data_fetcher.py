@@ -47,12 +47,13 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        result = self.data_fetcher.get_data(
-            symbol="XAUUSD",
-            timeframe="M15",
-            start_date=start_date,
-            end_date=end_date
-        )
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
         
         self.assertTrue(result.empty)
     
@@ -65,12 +66,13 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        result = self.data_fetcher.get_data(
-            symbol="XAUUSD",
-            timeframe="M15",
-            start_date=start_date,
-            end_date=end_date
-        )
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
         
         self.assertTrue(result.empty)
     
@@ -90,15 +92,73 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        result = self.data_fetcher.get_data(
-            symbol="XAUUSD",
-            timeframe="M15",
-            start_date=start_date,
-            end_date=end_date
-        )
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
         
         # Should return empty due to validation failure
         self.assertTrue(result.empty)
+
+    def test_local_mode_raises_when_no_cache(self):
+        """Local mode must fail loudly instead of silently returning empty data."""
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+        
+        with patch.object(self.data_fetcher, 'load_cached_data', return_value=None):
+            with self.assertRaises(ValueError) as ctx:
+                self.data_fetcher.get_data(
+                    symbol="XAUUSD",
+                    timeframe="M15",
+                    start_date=start_date,
+                    end_date=end_date
+                )
+        
+        self.assertIn("XAUUSD", str(ctx.exception))
+        self.assertIn("sample", str(ctx.exception))
+
+    def test_local_mode_returns_cached_data(self):
+        """Local mode returns cached fixtures covering the requested range."""
+        idx = pd.date_range(end=datetime.now(), periods=200, freq='15min')
+        cached = pd.DataFrame({
+            'open': 100.0,
+            'high': 101.0,
+            'low': 99.0,
+            'close': 100.5,
+            'volume': 1000,
+        }, index=idx)
+        
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=1)
+        
+        with patch.object(self.data_fetcher, 'load_cached_data', return_value=cached):
+            result = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
+        
+        self.assertFalse(result.empty)
+        self.assertTrue((result.index >= start_date).all())
+
+    def test_generate_sample_data(self):
+        """generate_sample_data produces valid seeded OHLCV data."""
+        from src.utils.helpers import generate_sample_data
+
+        df = generate_sample_data(asset="XAUUSD", days=7, timeframe="M15", seed=42)
+        self.assertGreater(len(df), 100)
+        self.assertIn('open', df.columns)
+        self.assertIn('volume', df.columns)
+        self.assertTrue((df['high'] >= df['low']).all())
+        self.assertTrue(df.index.tz is not None)
+
+        # Seeded generation is reproducible
+        df2 = generate_sample_data(asset="XAUUSD", days=7, timeframe="M15", seed=42)
+        pd.testing.assert_frame_equal(df, df2)
 
 
 if __name__ == '__main__':

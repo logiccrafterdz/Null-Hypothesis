@@ -258,6 +258,89 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def generate_sample_data(
+    asset: str = "XAUUSD",
+    days: int = 30,
+    timeframe: str = "M15",
+    seed: Optional[int] = None
+) -> pd.DataFrame:
+    """
+    Generate synthetic OHLCV data for testing and local backtests.
+
+    Produces a seeded random walk with occasional capitulation drops and
+    volume spikes so experiments are reproducible without a broker.
+
+    Args:
+        asset: Asset symbol (sets base price level)
+        days: Number of days of data
+        timeframe: MT5 timeframe (e.g., 'M15', 'H1', 'D1')
+        seed: Random seed for reproducibility
+
+    Returns:
+        DataFrame with OHLCV columns and tz-aware DatetimeIndex
+    """
+    base_prices = {
+        'XAUUSD': 2400.0,
+        'XAGUSD': 28.0,
+        'EURUSD': 1.09,
+        'GBPUSD': 1.27,
+        'USDJPY': 150.0,
+        'GBPJPY': 190.0,
+        'USDCHF': 0.90,
+        'AUDUSD': 0.66,
+        'NZDUSD': 0.61,
+        'USDCAD': 1.36,
+        'US30': 39000.0,
+        'NAS100': 19000.0,
+        'SPX500': 5200.0,
+        'GER40': 17500.0,
+    }
+    base_price = base_prices.get(asset, 100.0)
+
+    minute_map = {
+        'M1': 1, 'M5': 5, 'M15': 15, 'M30': 30,
+        'H1': 60, 'H4': 240, 'D1': 1440,
+    }
+    minutes = minute_map.get(timeframe, 15)
+    n_candles = max(100, int(days * 1440 / minutes))
+
+    rng = np.random.default_rng(seed)
+
+    # Random-walk returns with periodic capitulation drops
+    returns = rng.normal(0, 0.0015, n_candles)
+    step = max(10, int(n_candles * 0.02))
+    spike_step = max(step, int(n_candles * 0.06))
+    for i in range(step, n_candles, spike_step):
+        returns[i] = rng.uniform(-0.05, -0.035)
+        if i + 1 < n_candles:
+            returns[i + 1] = rng.uniform(0.005, 0.02)
+
+    closes = base_price * np.exp(np.cumsum(returns))
+
+    opens = np.empty(n_candles)
+    opens[0] = closes[0]
+    opens[1:] = closes[:-1]
+    opens = opens + rng.normal(0, 0.001, n_candles) * closes
+
+    highs = np.maximum(opens, closes) * (1 + rng.uniform(0.001, 0.008, n_candles))
+    lows = np.minimum(opens, closes) * (1 - rng.uniform(0.001, 0.008, n_candles))
+
+    volumes = rng.integers(800, 1500, n_candles).astype(float)
+    for i in range(step, n_candles, spike_step):
+        volumes[i] = rng.integers(1800, 2600)
+
+    end_time = datetime.now(pytz.UTC).replace(minute=0, second=0, microsecond=0)
+    index = pd.date_range(end=end_time, periods=n_candles, freq=f'{minutes}min', tz=pytz.UTC)
+
+    return pd.DataFrame({
+        'open': opens,
+        'high': highs,
+        'low': lows,
+        'close': closes,
+        'volume': volumes,
+    }, index=index)
+
+
 def is_trading_hours(
     dt: datetime,
     asset: str,

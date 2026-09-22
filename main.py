@@ -92,7 +92,12 @@ def run_backtest_mode(components: dict, args):
     start_date = end_date - timedelta(days=args.days)
     
     logger.info(f"Fetching data for {asset} from {start_date} to {end_date}")
-    data = data_fetcher.get_data(asset, TIMEFRAMES['main'], start_date, end_date)
+    try:
+        data = data_fetcher.get_data(asset, TIMEFRAMES['main'], start_date, end_date)
+    except ValueError as e:
+        logger.error(str(e))
+        print(f"\nERROR: {e}", file=sys.stderr)
+        return
     
     if data.empty:
         logger.error("No data available for backtesting")
@@ -218,6 +223,39 @@ def run_dashboard_mode(components: dict, args):
     subprocess.run([sys.executable, "-m", "streamlit", "run", str(dashboard_path)])
 
 
+def generate_sample_data_mode(components: dict, args):
+    """
+    Generate synthetic OHLCV data into the local data cache.
+
+    Args:
+        components: System components
+        args: Command line arguments
+    """
+    logger = get_logger()
+    data_fetcher = components['data_fetcher']
+
+    asset = args.asset or list(ASSETS.keys())[0]
+    timeframe = args.timeframe or TIMEFRAMES['main']
+    days = args.sample_days
+
+    from src.utils.helpers import generate_sample_data
+    df = generate_sample_data(
+        asset=asset,
+        days=days,
+        timeframe=timeframe,
+        seed=args.sample_seed
+    )
+
+    saved = data_fetcher.save_cached_data(df, asset, timeframe, "raw")
+    if saved:
+        path = data_fetcher.get_data_path(asset, timeframe, "raw")
+        logger.info(f"Generated {len(df)} sample candles for {asset} {timeframe}")
+        print(f"Sample data saved: {path}")
+    else:
+        logger.error("Failed to save sample data")
+    return saved
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Phoenix Protocol Trading System")
@@ -241,10 +279,38 @@ def main():
     parser.add_argument('--assets', nargs='+', help='Assets to trade')
     parser.add_argument('--interval', type=int, default=60, help='Trading interval in seconds')
     
+    # Local data fixtures
+    parser.add_argument(
+        '--generate-sample-data',
+        action='store_true',
+        help='Generate synthetic OHLCV data into the local data cache and exit'
+    )
+    parser.add_argument(
+        '--timeframe',
+        help='Timeframe for sample data generation (defaults to main timeframe)'
+    )
+    parser.add_argument(
+        '--sample-days',
+        type=int,
+        default=365,
+        help='Days of sample data to generate'
+    )
+    parser.add_argument(
+        '--sample-seed',
+        type=int,
+        default=42,
+        help='Random seed for sample data generation'
+    )
+    
     args = parser.parse_args()
     
     # Setup system
     components = setup_system()
+    
+    # Local data fixtures
+    if args.generate_sample_data:
+        generate_sample_data_mode(components, args)
+        return
     
     # Run selected mode
     if args.mode == 'backtest':

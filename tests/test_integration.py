@@ -66,12 +66,14 @@ class TestIntegration(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        data = self.data_fetcher.get_data(
-            symbol="XAUUSD",
-            timeframe="M15",
-            start_date=start_date,
-            end_date=end_date
-        )
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"), \
+                patch.object(self.data_fetcher, 'save_cached_data', return_value=True):
+            data = self.data_fetcher.get_data(
+                symbol="XAUUSD",
+                timeframe="M15",
+                start_date=start_date,
+                end_date=end_date
+            )
         
         # Should not detect bad luck moment
         bad_luck_moment = self.market_analyzer.detect_bad_luck_moment(
