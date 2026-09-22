@@ -176,6 +176,30 @@ class TestRiskManager(unittest.TestCase):
         self.risk_manager.update_cooldown()
         
         self.assertEqual(self.risk_manager.cooldown_trades_remaining, 2)
+
+    def test_cooldown_depletes_on_blocked_attempts(self):
+        """Cooldown must deplete as trades are blocked so it cannot be eternal."""
+        self.risk_manager.record_trade_pnl(-100)
+        self.assertEqual(self.risk_manager.cooldown_trades_remaining, 3)
+
+        can_open, reason = self.risk_manager.can_open_trade(
+            self.account_info, [], "XAUUSD"
+        )
+        self.assertFalse(can_open)
+        self.assertIn("Cooldown", reason)
+        self.assertEqual(self.risk_manager.cooldown_trades_remaining, 2)
+
+        self.risk_manager.can_open_trade(self.account_info, [], "XAUUSD")
+        self.assertEqual(self.risk_manager.cooldown_trades_remaining, 1)
+
+        self.risk_manager.can_open_trade(self.account_info, [], "XAUUSD")
+        self.assertEqual(self.risk_manager.cooldown_trades_remaining, 0)
+
+        can_open, reason = self.risk_manager.can_open_trade(
+            self.account_info, [], "XAUUSD"
+        )
+        self.assertTrue(can_open)
+        self.assertEqual(reason, "All risk checks passed")
     
     def test_get_trade_limits(self):
         """Test getting trade limits."""

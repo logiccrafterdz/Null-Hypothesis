@@ -407,6 +407,9 @@ class RiskManager:
         # Check cooldown
         cooldown_active, _ = self.check_cooldown()
         if cooldown_active:
+            # Each blocked opportunity depletes the cooldown so a single
+            # loss cannot block trading forever.
+            self.update_cooldown()
             return False, "Cooldown period active"
         
         # Check correlation if price data provided

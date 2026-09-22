@@ -126,6 +126,34 @@ class TestBadLuckStrategy(unittest.TestCase):
         self.assertIn('signal_type', signal)
         self.assertEqual(signal['asset'], 'XAUUSD')
         self.assertEqual(signal['signal_type'], 'ENTRY')
+
+    def test_generate_signal_sets_cooldown_on_reject(self):
+        """A rejected opportunity must deplete the loss cooldown."""
+        from src.core.market_analyzer import BadLuckMoment
+
+        bad_luck_moment = BadLuckMoment(
+            asset='XAUUSD',
+            timestamp=datetime.now(),
+            conditions={'price_drop': 0.05},
+            accepted=False
+        )
+
+        analysis = {
+            'has_signal': True,
+            'bad_luck_moment': bad_luck_moment,
+            'trend_filter_pass': True,
+            'volatility_filter_pass': True,
+            'data': self.sample_df,
+            'asset': 'XAUUSD'
+        }
+
+        # Mock the decision engine to reject the trade
+        self.strategy.decision_engine.decide_on_bad_luck_moment = Mock(return_value=(False, 0.1))
+
+        signal = self.strategy.generate_signal(analysis)
+
+        self.assertIsNone(signal)
+        self.mock_risk_manager.update_cooldown.assert_called_once()
     
     def test_execute_signal_risk_blocked(self):
         """Test signal execution when blocked by risk management."""

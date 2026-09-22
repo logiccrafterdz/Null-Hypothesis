@@ -127,6 +127,9 @@ class BadLuckStrategy(BaseStrategy):
         
         if not should_enter:
             self.logger.info(f"Bad luck moment rejected by random decision: {random_value:.4f}")
+            # A rejected opportunity still counts toward depleting the loss
+            # cooldown so it cannot block trading forever.
+            self.risk_manager.update_cooldown()
             return None
         
         # Generate signal
