@@ -374,7 +374,7 @@ class RiskManager:
         self,
         account_info: AccountInfo,
         open_positions: List[Position],
-        new_asset: str,
+        asset: str,
         price_data: Optional[Dict[str, pd.Series]] = None
     ) -> Tuple[bool, str]:
         """
@@ -383,7 +383,7 @@ class RiskManager:
         Args:
             account_info: Account information
             open_positions: List of open positions
-            new_asset: New asset symbol
+            asset: New asset symbol
             price_data: Price data for correlation check
             
         Returns:
@@ -414,7 +414,7 @@ class RiskManager:
         
         # Check correlation if price data provided
         if price_data:
-            correlation_too_high, _ = self.check_correlation(new_asset, open_positions, price_data)
+            correlation_too_high, _ = self.check_correlation(asset, open_positions, price_data)
             if correlation_too_high:
                 return False, "Asset too correlated with existing positions"
         

@@ -92,6 +92,7 @@ class TestIntegration(unittest.TestCase):
         # Check if trade can be opened
         can_open, reason = self.risk_manager.can_open_trade(
             account_info=self.account_info,
+            open_positions=[],
             asset="XAUUSD"
         )
         
