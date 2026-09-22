@@ -349,8 +349,25 @@ class UnifiedBroker:
             BrokerInterface instance or None
         """
         broker_type = self.asset_mapping.get(symbol)
-        if broker_type and broker_type in self.brokers:
-            return self.brokers[broker_type]
+        if broker_type:
+            if broker_type in self.brokers:
+                return self.brokers[broker_type]
+            self.logger.warning(
+                f"Symbol {symbol} mapped to '{broker_type}' but that broker is not connected"
+            )
+            return None
+
+        # No explicit mapping: default to the single connected broker so a
+        # fresh install with one MT5 account works without configuration.
+        if len(self.brokers) == 1:
+            return next(iter(self.brokers.values()))
+
+        if len(self.brokers) > 1:
+            self.logger.warning(
+                f"Symbol {symbol} has no broker mapping and multiple brokers "
+                f"are connected; call map_asset_to_broker() explicitly"
+            )
+
         return None
     
     def is_connected(self) -> bool:

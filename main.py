@@ -42,7 +42,7 @@ def setup_system():
         
         # Map forex assets to MT5
         for asset, config in ASSETS.items():
-            if config['broker'] == 'mt5':
+            if config.get('broker') == 'mt5':
                 unified_broker.map_asset_to_broker(asset, 'mt5')
     
     # Initialize core components
