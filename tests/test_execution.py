@@ -106,16 +106,28 @@ class TestTradeExecutor(unittest.TestCase):
         """Test successful trade execution."""
         # Mock broker
         mock_broker = Mock()
-        mock_broker.get_current_price.return_value = 100.0
         mock_broker.place_order.return_value = "ORDER123"
         self.mock_broker.get_broker_for_asset.return_value = mock_broker
         
         # Mock risk manager
         self.mock_risk_manager.calculate_position_size.return_value = 1.0
         
-        # Skip this test due to mock complexity
-        # The actual functionality works in integration tests
-        self.skipTest("Mock setup complexity - works in integration")
+        trade = self.trade_executor.execute_trade(
+            asset="XAUUSD",
+            account_info=self.account_info,
+            current_price=100.0,
+            market_conditions={}
+        )
+        
+        # Trade should be created with the order id as canonical identifier
+        self.assertIsNotNone(trade)
+        self.assertEqual(trade.trade_id, "ORDER123")
+        self.assertIn("ORDER123", self.trade_executor.active_trades)
+        self.assertEqual(self.trade_executor.active_trades["ORDER123"], trade)
+        self.assertEqual(trade.asset, "XAUUSD")
+        self.assertEqual(trade.direction, 'LONG')
+        self.assertEqual(trade.entry_price, 100.0)
+        self.assertEqual(trade.size, 1.0)
     
     def test_get_active_trades_empty(self):
         """Test getting active trades when none exist."""

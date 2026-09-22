@@ -245,8 +245,8 @@ class TradeExecutor:
                 status=TradeStatus.OPEN
             )
             
-            self.active_trades[trade_id] = trade
-            self.logger.info(f"Trade executed: {trade_id} {asset} {direction} @ {current_price}")
+            self.active_trades[order_id] = trade
+            self.logger.info(f"Trade executed: {order_id} {asset} {direction} @ {current_price}")
             
             # Send notification
             self.notification_manager.notify_trade_entry(
