@@ -5,17 +5,15 @@ Comprehensive backtesting with realistic trade simulation.
 
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
-import pytz
 
 from config.settings import BACKTESTING_INITIAL_CAPITAL, BACKTESTING_COMMISSION, BACKTESTING_SPREAD, BACKTESTING_SLIPPAGE
 from config.strategy_params import (
     TRADE_MANAGEMENT,
     RISK_MANAGEMENT,
-    BACKTESTING_PARAMS,
     SUCCESS_CRITERIA
 )
 from src.utils.logger import get_logger

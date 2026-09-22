@@ -100,60 +100,6 @@ def calculate_position_size(
     return min(size_lots, max_lot)
 
 
-def get_pip_location(asset: str) -> int:
-    """
-    Get pip location (decimal places) for different assets.
-    
-    Args:
-        asset: Asset symbol
-        
-    Returns:
-        Pip location (decimal places)
-    """
-    pip_locations = {
-        # Forex pairs (5 decimal places, 4 for pips)
-        'EURUSD': 4,
-        'GBPUSD': 4,
-        'USDJPY': 2,
-        'GBPJPY': 2,
-        'USDCHF': 4,
-        'AUDUSD': 4,
-        'NZDUSD': 4,
-        'USDCAD': 4,
-        # Metals (2 decimal places, 1 for pips)
-        'XAUUSD': 1,
-        'XAGUSD': 1,
-        # Indices (2 decimal places, 1 for pips)
-        'US30': 1,
-        'NAS100': 1,
-        'SPX500': 1,
-        'GER40': 1,
-    }
-    
-    return pip_locations.get(asset, 4)  # Default to 4 decimal places
-
-
-def calculate_pip_value(
-    position_size: float,
-    pip_location: int,
-    price: float
-) -> float:
-    """
-    Calculate pip value for a position.
-    
-    Args:
-        position_size: Position size
-        pip_location: Decimal place of pip (e.g., 4 for EURUSD)
-        price: Current price
-        
-    Returns:
-        Pip value in account currency
-    """
-    pip_size = 10 ** (-pip_location)
-    pip_value = position_size * pip_size
-    return pip_value
-
-
 def calculate_correlation(df1: pd.Series, df2: pd.Series, period: int = 20) -> float:
     """
     Calculate rolling correlation between two price series.

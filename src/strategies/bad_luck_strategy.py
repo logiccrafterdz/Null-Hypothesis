@@ -5,14 +5,11 @@ Implements the main strategy based on detecting capitulation moments.
 
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-import pandas as pd
 
-from config.settings import TIMEFRAMES, ASSETS
-from config.strategy_params import BAD_LUCK_DETECTOR
+from config.settings import TIMEFRAMES
 from src.strategies.base_strategy import BaseStrategy
 from src.api.broker_interface import AccountInfo
 from src.core.market_analyzer import BadLuckMoment
-from src.utils.logger import get_logger
 from src.utils.notifications import get_notification_manager
 
 

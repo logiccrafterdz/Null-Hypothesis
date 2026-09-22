@@ -3,8 +3,7 @@ Trade Executor for Phoenix Protocol Trading System
 Handles trade execution, order management, and position monitoring.
 """
 
-import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -14,7 +13,6 @@ from config.strategy_params import TRADE_MANAGEMENT
 from src.api.broker_interface import (
     UnifiedBroker,
     Order,
-    Position,
     AccountInfo
 )
 from src.core.risk_manager import RiskManager
@@ -263,12 +261,12 @@ class TradeExecutor:
             self.logger.error(f"Error executing trade: {e}")
             return None
     
-    def monitor_positions(self) -> List[Trade]:
+    def monitor_positions(self) -> List[Tuple[Trade, str]]:
         """
         Monitor open positions and manage trailing stops.
         
         Returns:
-            List of trades that need attention
+            List of (trade, reason) tuples that need to be closed
         """
         trades_to_close = []
         

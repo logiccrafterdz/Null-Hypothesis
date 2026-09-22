@@ -4,17 +4,14 @@ Handles multi-source data fetching with local storage and caching.
 """
 
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from pathlib import Path
-import pickle
 import pytz
 
 from config.settings import (
     DATA_DIR,
     DATA_SOURCE,
-    DATA_UPDATE_INTERVAL,
     DATA_RETENTION_DAYS,
     ASSETS,
     TIMEFRAMES
