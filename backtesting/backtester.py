@@ -14,6 +14,7 @@ from config.settings import BACKTESTING_INITIAL_CAPITAL, BACKTESTING_COMMISSION,
 from config.strategy_params import (
     TRADE_MANAGEMENT,
     RISK_MANAGEMENT,
+    BAD_LUCK_DETECTOR,
     SUCCESS_CRITERIA
 )
 from src.utils.logger import get_logger
@@ -184,7 +185,7 @@ class Backtester:
             # Filter data by date range
             data = data[(data.index >= start_date) & (data.index <= end_date)].copy()
             
-            if len(data) < 100:
+            if len(data) < BAD_LUCK_DETECTOR['warmup_bars']:
                 return self._create_error_result("Insufficient data for backtesting")
             
             # Initialize

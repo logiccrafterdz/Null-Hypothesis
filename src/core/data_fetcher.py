@@ -404,7 +404,10 @@ class DataFetcher:
         }
         
         minutes = timeframe_minutes.get(timeframe, 15)
-        start_date = end_date - timedelta(minutes=minutes * num_candles)
+        # Pad the window so the filtered range reliably holds at least
+        # num_candles bars (a bare num_candles window yields fewer).
+        margin = min(20, num_candles)
+        start_date = end_date - timedelta(minutes=minutes * (num_candles + margin))
         
         df = self.get_data(symbol, timeframe, start_date, end_date)
         

@@ -22,6 +22,10 @@ BAD_LUCK_DETECTOR = {
     # Volume averaging period
     "volume_period": 20,
     
+    # Minimum bars required before the detector can produce a verdict
+    # (single source of truth for warmup across live and backtesting)
+    "warmup_bars": 30,
+    
     # Reversal candle patterns to detect
     "reversal_patterns": [
         "hammer",
