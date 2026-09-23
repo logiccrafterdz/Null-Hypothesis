@@ -63,6 +63,8 @@ backtesting/results/*
 reports/*
 !reports/.gitkeep
 !reports/post_fix_backtest_report.md
+!reports/real_data_quality_report.md
+!reports/real_history_backtest_report.md
 
 # Notebooks
 notebooks/.ipynb_checkpoints/
