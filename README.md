@@ -19,23 +19,43 @@ Because we enter when everything is burning down and hope to rise from the ashes
 
 ## The Numbers
 
-According to some simulations we ran:
-- Win rate: 72% (probably won't hold up in real trading)
-- Profit factor: 3.55 (seems suspiciously high)
-- Max drawdown: -10.6% (sounds too good to be true)
-- Total return: 30.66% (definitely won't be this good in practice)
+> **INVALID — superseded.** The figures below were produced by an earlier,
+> buggy backtesting engine (exit orders were not actually executed, position
+> sizing used the wrong units, the detector used hardcoded thresholds, and
+> `weekday()==5` treated Saturday as Friday). They must NOT be quoted as
+> strategy performance.
 
-> **Note:** These figures were produced by an earlier, buggy backtesting
-> engine (exit orders were not actually executed, position sizing used the
-> wrong units, and the detector used hardcoded thresholds). They are **not
-> valid** until the backtest is re-run with the corrected code. Re-generate
-> them with `python main.py --mode backtest --asset XAUUSD --days 365`
-> after seeding local data with `python main.py --generate-sample-data`.
+- Win rate: 72% **INVALID**
+- Profit factor: 3.55 **INVALID**
+- Max drawdown: -10.6% **INVALID**
+- Total return: 30.66% **INVALID**
+
+Corrected results for the current code are in
+`reports/post_fix_backtest_report.md` (currently **PIPELINE VALIDATION ONLY**
+on synthetic fixtures — not a real-market claim; see that report before
+drawing any conclusion).
 
 ## How to Use
 
 ```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Verify the fixing suite (all tests must pass)
+python -m pytest tests/ -q
+
+# 3. Real data (option A): export MT5 history to data/raw/
+python scripts/export_mt5_history.py --symbols XAUUSD GBPJPY EURUSD --days 730
+
+# 3. Synthetic fixtures (option B): reproducible pipeline-validation data
+#    (substitutes when MT5 is unavailable; NEVER treated as real history)
+python scripts/generate_synthetic_data.py --symbols XAUUSD GBPJPY EURUSD --days 365
+
+# 4. Run one asset through the corrected backtester
 python main.py --mode backtest --asset XAUUSD --days 365
+
+# 5. Generate the post-fix validation report
+python scripts/generate_backtest_report.py --days 365 --capital 10000
 ```
 
 If you want to actually use real money:
