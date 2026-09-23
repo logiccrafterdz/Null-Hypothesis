@@ -15,9 +15,11 @@ from config.strategy_params import (
     TRADE_MANAGEMENT,
     RISK_MANAGEMENT,
     BAD_LUCK_DETECTOR,
+    SYMBOL_METADATA,
     SUCCESS_CRITERIA
 )
 from src.utils.logger import get_logger
+from src.utils.helpers import calculate_position_size
 from src.core.market_analyzer import MarketAnalyzer
 from src.core.decision_engine import DecisionEngine
 
@@ -226,7 +228,7 @@ class Backtester:
                     
                     if position:
                         open_positions.append(position)
-                        capital -= position['size'] * position['entry_price'] * self.commission
+                        capital -= position['size'] * position['contract_size'] * position['entry_price'] * self.commission
                 
                 # Update equity
                 open_pnl = sum(p['current_pnl'] for p in open_positions)
@@ -334,11 +336,21 @@ class Backtester:
         else:
             entry_price = entry_price * (1 - self.slippage)
         
-        # Calculate position size
+        # Calculate position size in MT5 lots using the exact same production
+        # sizing as live trading (contract size, lot step, min/max lot).
+        size = calculate_position_size(
+            capital,
+            self.position_size_risk,
+            self.stop_loss_pct,
+            entry_price,
+            asset
+        )
+        if size <= 0:
+            # Risk budget cannot cover a minimum lot: refuse the trade.
+            return None
+        
         stop_loss_price = entry_price * (1 - self.stop_loss_pct) if direction == 'LONG' else entry_price * (1 + self.stop_loss_pct)
-        risk_amount = capital * self.position_size_risk
-        stop_loss_amount = abs(entry_price - stop_loss_price)
-        position_size = risk_amount / stop_loss_amount if stop_loss_amount > 0 else 0
+        contract_size = SYMBOL_METADATA[asset]['contract_size']
         
         # Calculate take profit
         take_profit_price = entry_price * (1 + self.take_profit_pct) if direction == 'LONG' else entry_price * (1 - self.take_profit_pct)
@@ -348,7 +360,8 @@ class Backtester:
             'asset': asset,
             'direction': direction,
             'entry_price': entry_price,
-            'size': position_size,
+            'size': size,
+            'contract_size': contract_size,
             'stop_loss': stop_loss_price,
             'take_profit': take_profit_price,
             'current_pnl': 0.0,
@@ -392,7 +405,7 @@ class Backtester:
             position['bars_held'] = bars_held
 
             # Calculate current PnL
-            current_pnl = position['size'] * (current_price - entry_price) if direction == 'LONG' else position['size'] * (entry_price - current_price)
+            current_pnl = position['size'] * position['contract_size'] * (current_price - entry_price) if direction == 'LONG' else position['size'] * position['contract_size'] * (entry_price - current_price)
             position['current_pnl'] = current_pnl
 
             pnl_pct = (current_price - entry_price) / entry_price if direction == 'LONG' else (entry_price - current_price) / entry_price
@@ -487,6 +500,8 @@ class Backtester:
         direction = position['direction']
         entry_price = position['entry_price']
         size = position['size']
+        contract_size = position['contract_size']
+        notional = size * contract_size
         
         # Apply slippage to exit
         if direction == 'LONG':
@@ -494,16 +509,16 @@ class Backtester:
         else:
             exit_price = exit_price * (1 + self.slippage)
         
-        # Calculate PnL
+        # Calculate PnL (size is an MT5 lot volume)
         if direction == 'LONG':
-            pnl = size * (exit_price - entry_price)
+            pnl = notional * (exit_price - entry_price)
         else:
-            pnl = size * (entry_price - exit_price)
+            pnl = notional * (entry_price - exit_price)
         
         # Subtract commission
-        pnl -= size * exit_price * self.commission
+        pnl -= notional * exit_price * self.commission
         
-        pnl_pct = pnl / (entry_price * size)
+        pnl_pct = pnl / (entry_price * notional)
         
         return BacktestTrade(
             entry_time=position['entry_time'],
