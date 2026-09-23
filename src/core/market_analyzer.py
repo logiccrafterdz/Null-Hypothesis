@@ -223,6 +223,71 @@ class MarketAnalyzer:
         
         return False
     
+    def precompute_verdict_mask(
+        self,
+        df: pd.DataFrame,
+        asset: str
+    ) -> pd.Series:
+        """
+        Vectorized pre-filter for detect_bad_luck_moment.
+
+        Returns a boolean Series aligned to ``df.index`` that is True exactly
+        where the per-bar detector (with a bounded window) would return a
+        BadLuckMoment. All component indicators use fixed rolling windows, so
+        the value at a position does not depend on how much history precedes
+        the window; this mask is therefore identical to the windowed checks.
+        Used by the backtester to avoid running the expensive per-bar detector
+        on every candle (the detector is still the authoritative oracle).
+
+        Args:
+            df: DataFrame with OHLCV data
+            asset: Asset symbol
+
+        Returns:
+            Boolean Series (True = candidate bad luck moment)
+        """
+        # Time gates first (only depend on the timestamp, not the window).
+        in_hours = pd.Series(
+            [is_trading_hours(ts, asset) for ts in df.index], index=df.index
+        )
+        near_news = pd.Series(
+            [self.is_news_time(ts) for ts in df.index], index=df.index
+        )
+
+        # Price drop: (prev_close - close) / prev_close >= drop_threshold.
+        prev_close = df['close'].shift(1)
+        drop_pct = (prev_close - df['close']) / prev_close
+        drop_met = drop_pct >= BAD_LUCK_DETECTOR['drop_threshold']
+
+        # Volume spike: volume vs mean of the *previous* volume_period bars.
+        volume_period = BAD_LUCK_DETECTOR['volume_period']
+        vol_avg = df['volume'].shift(1).rolling(volume_period).mean()
+        vol_ratio = df['volume'] / vol_avg
+        volume_met = (
+            (vol_ratio >= BAD_LUCK_DETECTOR['volume_multiplier']) &
+            (vol_avg > 0)
+        )
+
+        # Volatility spike: ATR vs mean of the *previous* atr_period ATRs.
+        atr_period = BAD_LUCK_DETECTOR['atr_period']
+        atr = calculate_atr(df, atr_period)
+        atr_avg = atr.shift(1).rolling(atr_period).mean()
+        atr_ratio = atr / atr_avg
+        volatility_met = (
+            (atr_ratio >= BAD_LUCK_DETECTOR['atr_multiplier']) &
+            (atr_avg > 0)
+        )
+
+        # Reversal pattern (position-invariant candlestick logic).
+        reversal_met = is_reversal_pattern(
+            df, BAD_LUCK_DETECTOR['reversal_patterns']
+        ).astype(bool)
+
+        return (
+            in_hours & ~near_news & drop_met & volume_met &
+            volatility_met & reversal_met
+        )
+
     def detect_bad_luck_moment(
         self,
         df: pd.DataFrame,

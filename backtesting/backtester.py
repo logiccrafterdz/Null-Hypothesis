@@ -161,6 +161,17 @@ class Backtester:
         self.trailing_activation_pct = TRADE_MANAGEMENT['trailing_activation_pct']
         self.trailing_distance_pct = TRADE_MANAGEMENT['trailing_distance_pct']
         self.max_duration_candles = TRADE_MANAGEMENT['max_duration_candles']
+        
+        # Diagnostic counters (reset per run_backtest call, not part of
+        # result calculation; used by reporting tooling).
+        self._signal_count = 0
+        self._entry_count = 0
+        self._size_refusal_count = 0
+
+        # Vectorized pre-filter for the per-bar detector (see
+        # MarketAnalyzer.precompute_verdict_mask). None disables the fast
+        # path so _check_signal always runs the production detector.
+        self._verdict_mask = None
     
     def run_backtest(
         self,
@@ -189,6 +200,12 @@ class Backtester:
             
             if len(data) < BAD_LUCK_DETECTOR['warmup_bars']:
                 return self._create_error_result("Insufficient data for backtesting")
+            
+            # Reset diagnostic counters for this run
+            self._signal_count = 0
+            self._entry_count = 0
+            self._size_refusal_count = 0
+            self._verdict_mask = self.analyzer.precompute_verdict_mask(data, asset)
             
             # Initialize
             capital = self.initial_capital
@@ -231,6 +248,7 @@ class Backtester:
                     
                     if position:
                         open_positions.append(position)
+                        self._entry_count += 1
                         capital -= position['size'] * position['contract_size'] * position['entry_price'] * self.commission
                 
                 # Update equity
@@ -293,10 +311,20 @@ class Backtester:
         if len(data) < 20:
             return None
 
+        # Fast path: skip the full detector when the vectorized gate proves
+        # detect_bad_luck_moment could not fire on this bar. The mask is
+        # exact (position-invariant indicators) and _check_signal remains the
+        # authoritative oracle, so this never changes results.
+        mask = getattr(self, '_verdict_mask', None)
+        if mask is not None:
+            if not mask.loc[data.index[-1]]:
+                return None
+
         # Production detection pipeline
         moment = self.analyzer.detect_bad_luck_moment(data, asset, current_time)
         if moment is None:
             return None
+        self._signal_count += 1
 
         # Organized randomness decision (same engine as live trading)
         should_enter, _ = self.decision_engine.decide_on_bad_luck_moment(moment)
@@ -350,6 +378,7 @@ class Backtester:
         )
         if size <= 0:
             # Risk budget cannot cover a minimum lot: refuse the trade.
+            self._size_refusal_count += 1
             return None
         
         stop_loss_price = entry_price * (1 - self.stop_loss_pct) if direction == 'LONG' else entry_price * (1 + self.stop_loss_pct)
