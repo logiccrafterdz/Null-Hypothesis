@@ -91,19 +91,35 @@ class DataFetcher:
         """
         try:
             file_path = self.get_data_path(symbol, timeframe, data_type)
+            csv_path = file_path.with_suffix('.csv')
             
-            if not file_path.exists():
+            # Parquet cache wins when present; historical CSV fixtures are
+            # the fallback source (created by scripts/export_mt5_history.py
+            # or scripts/generate_synthetic_data.py).
+            if not file_path.exists() and not csv_path.exists():
                 return None
             
-            df = pd.read_parquet(file_path)
-            
-            # Check if data is too old
-            file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime, pytz.UTC)
-            age_days = (datetime.now(pytz.UTC) - file_mtime).days
-            
-            if age_days > DATA_RETENTION_DAYS:
-                self.logger.info(f"Cached data for {symbol} {timeframe} is too old ({age_days} days)")
-                return None
+            if file_path.exists():
+                df = pd.read_parquet(file_path)
+                # Parquet files are treated as a live cache: reject stale data.
+                file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime, pytz.UTC)
+                age_days = (datetime.now(pytz.UTC) - file_mtime).days
+                if age_days > DATA_RETENTION_DAYS:
+                    self.logger.info(
+                        f"Cached data for {symbol} {timeframe} is too old ({age_days} days)"
+                    )
+                    return None
+            else:
+                # CSV historical fixtures are explicit user exports: they are
+                # static by definition, so no staleness check is applied.
+                df = pd.read_csv(
+                    csv_path, comment='#', index_col=0, parse_dates=True
+                )
+                if df.index.tz is None:
+                    # Exporters write server-local wall-clock times; the
+                    # pipeline interprets naive timestamps as UTC.
+                    df.index = df.index.tz_localize('UTC')
+                df = df[['open', 'high', 'low', 'close', 'volume']].copy()
             
             self.logger.debug(f"Loaded cached data for {symbol} {timeframe}")
             return df
@@ -232,8 +248,8 @@ class DataFetcher:
             raise ValueError(
                 f"DATA_SOURCE='local' has no cached data for {symbol} {timeframe} "
                 f"covering {start_date} to {end_date}. Generate fixtures with "
-                f"'python main.py --generate-sample-data' or place a file at "
-                f"{self.get_data_path(symbol, timeframe, 'raw')}."
+                f"'python scripts/generate_synthetic_data.py' or export real "
+                f"history via 'python scripts/export_mt5_history.py'."
             )
         
         # Try to load cached data

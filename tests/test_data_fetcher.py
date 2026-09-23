@@ -10,6 +10,7 @@ import pandas as pd
 import sys
 from pathlib import Path
 import pytz
+import tempfile
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -119,7 +120,7 @@ class TestDataFetcher(unittest.TestCase):
                 )
         
         self.assertIn("XAUUSD", str(ctx.exception))
-        self.assertIn("sample", str(ctx.exception))
+        self.assertIn("synthetic", str(ctx.exception))
 
     def test_local_mode_returns_cached_data(self):
         """Local mode returns cached fixtures covering the requested range."""
@@ -213,6 +214,54 @@ class TestDataFetcher(unittest.TestCase):
                 signals += 1
 
         self.assertGreater(signals, 0)
+
+    def test_generate_sample_data_regimes(self):
+        """Every documented regime produces valid reproducible OHLCV data."""
+        from src.utils.helpers import generate_sample_data
+
+        for regime in ("trend_up", "trend_down", "ranging", "high_vol", "mixed"):
+            df = generate_sample_data(
+                asset="XAUUSD", days=5, timeframe="M15", seed=7, regime=regime
+            )
+            self.assertGreater(len(df), 100, regime)
+            self.assertTrue((df['high'] >= df['low']).all(), regime)
+            self.assertTrue((df['close'] > 0).all(), regime)
+            self.assertTrue(df.index.tz is not None, regime)
+
+            df2 = generate_sample_data(
+                asset="XAUUSD", days=5, timeframe="M15", seed=7, regime=regime
+            )
+            pd.testing.assert_frame_equal(df, df2)
+
+    def test_load_cached_data_reads_csv_fixture(self):
+        """Historical CSV fixtures in data/raw must be loadable as cached
+        data (used by DATA_SOURCE=local) and get an aware UTC index."""
+        from src.core.data_fetcher import DataFetcher
+
+        fetcher = DataFetcher(Mock())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            fetcher.raw_dir = tmp_dir
+            fetcher.processed_dir = tmp_dir / "processed"
+
+            idx = pd.date_range(end=datetime.now(pytz.UTC), periods=200, freq='15min')
+            frame = pd.DataFrame({
+                'open': 100.0, 'high': 101.0, 'low': 99.0,
+                'close': 100.5, 'volume': 1000,
+            }, index=idx)
+            csv_path = tmp_dir / "XAUUSD_M15.csv"
+            header = ["# source: synthetic", "# columns: datetime, open, high, low, close, volume"]
+            with csv_path.open("w", encoding="utf-8") as fh:
+                fh.write("\n".join(header) + "\n")
+                frame.reset_index().rename(columns={"index": "datetime"}).to_csv(
+                    fh, index=False
+                )
+
+            loaded = fetcher.load_cached_data("XAUUSD", "M15", "raw")
+            self.assertIsNotNone(loaded)
+            self.assertEqual(len(loaded), 200)
+            self.assertEqual(str(loaded.index.tz), 'UTC')
+            self.assertTrue((loaded['high'] >= loaded['low']).all())
 
 
 if __name__ == '__main__':

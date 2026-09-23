@@ -227,7 +227,8 @@ def generate_sample_data(
     asset: str = "XAUUSD",
     days: int = 30,
     timeframe: str = "M15",
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
+    regime: Optional[str] = None
 ) -> pd.DataFrame:
     """
     Generate synthetic OHLCV data for testing and local backtests.
@@ -240,6 +241,9 @@ def generate_sample_data(
         days: Number of days of data
         timeframe: MT5 timeframe (e.g., 'M15', 'H1', 'D1')
         seed: Random seed for reproducibility
+        regime: Optional market regime to synthesize:
+            'trend_up' / 'trend_down' / 'ranging' / 'high_vol' / 'mixed'
+            (default 'mixed', matching the pre-existing behavior)
 
     Returns:
         DataFrame with OHLCV columns and tz-aware DatetimeIndex
@@ -271,8 +275,22 @@ def generate_sample_data(
 
     rng = np.random.default_rng(seed)
 
+    # Regime controls drift and bar-to-bar volatility; capitulation
+    # events are always synthesized because they are what the strategy
+    # (and therefore the backtest pipeline) is meant to react to.
+    if regime == 'trend_up':
+        drift, sigma = 2.0e-4, 1.2e-3
+    elif regime == 'trend_down':
+        drift, sigma = -2.0e-4, 1.2e-3
+    elif regime == 'ranging':
+        drift, sigma = 0.0, 5.0e-4
+    elif regime == 'high_vol':
+        drift, sigma = 0.0, 4.0e-3
+    else:  # 'mixed' or None: current default behavior
+        drift, sigma = 0.0, 1.5e-3
+
     # Random-walk returns with periodic capitulation drops
-    returns = rng.normal(0, 0.0015, n_candles)
+    returns = rng.normal(drift, sigma, n_candles)
     step = max(10, int(n_candles * 0.02))
     spike_step = max(step, int(n_candles * 0.06))
     for i in range(step, n_candles, spike_step):
