@@ -213,8 +213,11 @@ class Backtester:
                     trades.append(closed_trade)
                     capital += closed_trade.pnl
                 
-                # Check for bad luck moment
-                signal = self._check_signal(data.iloc[:i+1], asset, current_time)
+                # Check for bad luck moment on a bounded window (the detector only
+                # needs ~40 bars of context; slicing the growing frame every
+                # bar turned the simulation O(n^2) on long histories).
+                window = data.iloc[max(0, i - 63):i + 1]
+                signal = self._check_signal(window, asset, current_time)
                 
                 if signal and len(open_positions) < self.max_open_trades:
                     # Execute trade
@@ -571,7 +574,13 @@ class Backtester:
         
         gross_profit = sum(t.pnl for t in winning_trades)
         gross_loss = abs(sum(t.pnl for t in losing_trades))
-        profit_factor = gross_profit / gross_loss if gross_loss > 0 else 0.0
+        # Zero losing trades means profit factor is unbounded, not 0.
+        if gross_loss > 0:
+            profit_factor = gross_profit / gross_loss
+        elif gross_profit > 0:
+            profit_factor = float('inf')
+        else:
+            profit_factor = 0.0
         
         avg_win = gross_profit / len(winning_trades) if winning_trades else 0.0
         avg_loss = gross_loss / len(losing_trades) if losing_trades else 0.0

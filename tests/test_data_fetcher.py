@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 import pytz
 import tempfile
+from contextlib import contextmanager
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -37,6 +38,22 @@ class TestDataFetcher(unittest.TestCase):
             'volume': [1000, 1100, 1200, 1300, 1400]
         })
     
+    @contextmanager
+    def _isolated_cache(self):
+        """Run with an empty cache directory so tests do not depend on any
+        fixtures the developer may have generated in the working tree."""
+        original_raw = self.data_fetcher.raw_dir
+        original_processed = self.data_fetcher.processed_dir
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            self.data_fetcher.raw_dir = tmp_dir
+            self.data_fetcher.processed_dir = tmp_dir / "processed"
+            try:
+                yield
+            finally:
+                self.data_fetcher.raw_dir = original_raw
+                self.data_fetcher.processed_dir = original_processed
+    
     def test_initialization(self):
         """Test data fetcher initialization."""
         self.assertIsNotNone(self.data_fetcher)
@@ -49,7 +66,7 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"), self._isolated_cache():
             result = self.data_fetcher.get_data(
                 symbol="XAUUSD",
                 timeframe="M15",
@@ -68,7 +85,7 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"), self._isolated_cache():
             result = self.data_fetcher.get_data(
                 symbol="XAUUSD",
                 timeframe="M15",
@@ -94,7 +111,7 @@ class TestDataFetcher(unittest.TestCase):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)
         
-        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"):
+        with patch("src.core.data_fetcher.DATA_SOURCE", "hybrid"), self._isolated_cache():
             result = self.data_fetcher.get_data(
                 symbol="XAUUSD",
                 timeframe="M15",
