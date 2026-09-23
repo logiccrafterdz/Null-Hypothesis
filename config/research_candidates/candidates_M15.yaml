@@ -1,0 +1,45 @@
+# Research candidates: M15 timeframe — REAL DATA 2024-09-23 .. 2026-09-23
+# Status: STUDIED / NOT PROMOTED. Do not apply these to production.
+# Source: scripts/analyze_signal_feasibility.py + scripts/run_research_backtests.py
+# Reason NOT promoted: no forward-return edge over a random baseline and the
+# realised research simulations with production trade-management lose money.
+
+timeframe: M15
+data:
+  - symbols: [XAUUSD, GBPJPY, EURUSD]
+  - real_history_start: 2024-09-23
+  - real_history_end: 2026-09-23
+  - bars_per_symbol: {XAUUSD: 47231, GBPJPY: 49679, EURUSD: 49680}
+
+drop_candidates_studied: [0.002, 0.003, 0.005, 0.008, 0.010]
+volume_screens_studied:
+  - {type: ratio, values: [1.5, 2.0, 2.5, 3.0]}
+  - {type: z_score_window_100, values: [2.0, 3.0]}
+  - {type: percentile_window_100, values: [0.95, 0.98, 0.99]}
+atr_multiples_studied: [2.0, 3.0, 4.0, 5.0]
+dynamic_threshold_windows_bars: [480, 960, 2064]   # 1w / 2w / ~1mo
+dynamic_threshold_floor: 0.001                     # halts absurd thresholds
+
+most_active_candidates_signals_over_2y:   # drop + ratio>1.5 counts
+  XAUUSD: {drop_0.002: 983, drop_0.003: 496, drop_0.005: 169}
+  GBPJPY: {drop_0.002: 153, drop_0.003: 50, drop_0.005: 14}
+  EURUSD: {drop_0.002: 106, drop_0.003: 36, drop_0.005: 9}
+
+full_detector_stack_relaxed_counts: 0   # drop+vol+ATR-spike+reversal = 0
+                                       # for every candidate tested on M15
+
+realised_simulation_capital_10000:
+  XAUUSD_drop_0.002_ratio_1.5: {traded: 336, winrate_pct: 49.7, profit_factor: 0.71, return_pct: -35.69}
+  XAUUSD_drop_0.002_z_2.0:      {traded: 194, winrate_pct: 56.2, profit_factor: 0.90, return_pct: -9.73}
+  GBPJPY_drop_0.002_ratio_1.5:  {traded: 0,    min_lot_refused: true}
+  EURUSD_drop_0.002_ratio_1.5:  {traded: 36,  winrate_pct: 50.0, profit_factor: 0.99, return_pct: -0.94}
+  EURUSD_drop_0.002_z_2.0:      {traded: 29,  winrate_pct: 44.8, profit_factor: 0.97, return_pct: -0.91}
+
+rationale:
+  - M15 drop distributions put the historical 99th percentile far above the
+    production 3% threshold for EURUSD/GBPJPY (see feasibility report A1).
+  - The same-bar reversal-pattern condition is structurally incompatible with
+    large drop bars (~1% of large-drop bars carry a pattern vs ~27% of all
+    bars), which is why the FULL detector stack fires zero times on real data.
+  - Forward-return edge vs random baseline is ~0 or negative for every M15
+    candidate (report B1); no permission to promote any M15 threshold.

@@ -40,8 +40,26 @@ drawing any conclusion).
 plainly: at the configured thresholds the detector NEVER fires on these
 instruments' 15-minute data — a bar with both `drop >= 3%` AND `volume >= 2x`
 does not occur once in 2 years for XAUUSD/GBPJPY/EURUSD. The strategy, as
-configured, is effectively dormant on real markets. No thresholds were tuned
-for this exercise; that calibration work is open research.
+configured, is effectively dormant on real markets.
+
+**Threshold-calibration research (Phase 8, real data, honest conclusion)**
+is in `reports/threshold_calibration_report.md`, with supporting evidence in
+`reports/signal_feasibility_report.md` and
+`reports/research_candidate_backtests.md`:
+
+- Studied M15/M30/H1 (M5 excluded: only ~14 days retained by the terminal)
+  across fixed drop grids, volume screens (ratio 1.5-3x, z-score, percentile),
+  ATR-multiple drops, and dynamic trailing-percentile thresholds.
+- The full production detector stack (drop + volume + ATR-spike + same-bar
+  reversal pattern) fires **0 times** over 2 years on every symbol/timeframe
+  even with relaxed thresholds — reversal patterns and large drop bars are
+  structurally incompatible on the same bar (~1% vs ~27% base rate).
+- Drop+volume-only candidates have enough frequency to trade but show **no
+  forward-return edge** over a random baseline and every realised simulation
+  with production trade management loses money (PF 0.07-0.99).
+- Result: flat **NO-GO** for production deployment. No candidate is promoted.
+  Research configs are isolated under `config/research_candidates/` (untouched
+  production defaults).
 
 ## How to Use
 
@@ -75,6 +93,14 @@ python scripts/generate_real_report.py --days 730 --capital 20000
 
 # 7. Generate the post-fix (synthetic/pipeline) report
 python scripts/generate_backtest_report.py --days 365 --capital 10000
+
+# 8. Signal-feasibility study on real data (Phase 8 research; writes
+#    reports/signal_feasibility_report.md) — calibrates nothing in production
+python scripts/analyze_signal_feasibility.py
+
+# 9. Research backtests of the relaxed candidates (writes
+#    reports/research_candidate_backtests.md)
+python scripts/run_research_backtests.py
 ```
 
 If you want to actually use real money:

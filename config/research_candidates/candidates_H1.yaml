@@ -1,0 +1,37 @@
+# Research candidates: H1 timeframe — REAL DATA 2024-09-23 .. 2026-09-23
+# Status: STUDIED / NOT PROMOTED. Do not apply these to production.
+# Source: scripts/analyze_signal_feasibility.py + scripts/run_research_backtests.py
+
+timeframe: H1
+data:
+  - symbols: [XAUUSD, GBPJPY, EURUSD]
+  - real_history_start: 2024-09-23
+  - real_history_end: 2026-09-23
+  - bars_per_symbol: {XAUUSD: 11818, GBPJPY: 12423, EURUSD: 12423}
+
+drop_candidates_studied: [0.003, 0.005, 0.008, 0.010, 0.015]
+volume_screens_studied:
+  - {type: ratio, values: [1.5, 2.0, 2.5, 3.0]}
+  - {type: z_score_window_100, values: [2.0, 3.0]}
+  - {type: percentile_window_100, values: [0.95, 0.98, 0.99]}
+atr_multiples_studied: [2.0, 3.0, 4.0, 5.0]
+dynamic_threshold_windows_bars: [120, 240, 516]   # 1w / 2w / ~1mo
+dynamic_threshold_floor: 0.002
+
+most_active_candidates_signals_over_2y:   # drop + ratio>1.5 counts
+  XAUUSD: {drop_0.003: 384, drop_0.005: 208, drop_0.008: 84}
+  GBPJPY: {drop_0.003: 93,  drop_0.005: 23,  drop_0.008: 5}
+  EURUSD: {drop_0.003: 59,  drop_0.005: 14,  drop_0.008: 3}
+
+full_detector_stack_relaxed_counts: 0   # drop+vol+ATR-spike+reversal = 0
+
+realised_simulation_capital_10000:
+  XAUUSD_drop_0.003_ratio_1.5: {traded: 139, winrate_pct: 46.8, profit_factor: 0.82, return_pct: -13.99}
+  XAUUSD_drop_0.005_ratio_1.5: {traded: 63,  winrate_pct: 47.6, profit_factor: 0.68, return_pct: -11.05}
+  GBPJPY_drop_0.003_ratio_1.5: {traded: 0,    min_lot_refused: true}
+
+rationale:
+  - XAUUSD H1 was the closest to a viable signal pool by raw count but its
+    realised return is deeply negative; 18-26% of trades exit on the 1.5%
+    stop while most remaining trades expire via max-duration at ~+0.1-0.2%.
+  - No permission to promote any H1 threshold.

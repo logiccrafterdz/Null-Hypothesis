@@ -65,6 +65,11 @@ reports/*
 !reports/post_fix_backtest_report.md
 !reports/real_data_quality_report.md
 !reports/real_history_backtest_report.md
+!reports/real_data_quality_report_M30.md
+!reports/real_data_quality_report_H1.md
+!reports/signal_feasibility_report.md
+!reports/research_candidate_backtests.md
+!reports/threshold_calibration_report.md
 
 # Notebooks
 notebooks/.ipynb_checkpoints/
