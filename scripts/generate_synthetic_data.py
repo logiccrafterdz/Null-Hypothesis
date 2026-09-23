@@ -9,8 +9,8 @@ MT5 terminal or live credentials.
 IMPORTANT
 ---------
 Synthetic data is for PIPELINE VALIDATION ONLY. It must never be used to
-claim real strategy performance. Use scripts/export_mt5_history.py to pull
-real history when it becomes available.
+claim real strategy performance. Use scripts/download_mt5_history.py to pull
+real history when a terminal is available.
 
 Usage
 -----

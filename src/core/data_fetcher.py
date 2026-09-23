@@ -94,7 +94,7 @@ class DataFetcher:
             csv_path = file_path.with_suffix('.csv')
             
             # Parquet cache wins when present; historical CSV fixtures are
-            # the fallback source (created by scripts/export_mt5_history.py
+            # the fallback source (created by scripts/download_mt5_history.py
             # or scripts/generate_synthetic_data.py).
             if not file_path.exists() and not csv_path.exists():
                 return None
@@ -249,7 +249,7 @@ class DataFetcher:
                 f"DATA_SOURCE='local' has no cached data for {symbol} {timeframe} "
                 f"covering {start_date} to {end_date}. Generate fixtures with "
                 f"'python scripts/generate_synthetic_data.py' or export real "
-                f"history via 'python scripts/export_mt5_history.py'."
+                f"history via 'python scripts/download_mt5_history.py'."
             )
         
         # Try to load cached data

@@ -163,10 +163,30 @@ class Backtester:
         self.max_duration_candles = TRADE_MANAGEMENT['max_duration_candles']
         
         # Diagnostic counters (reset per run_backtest call, not part of
-        # result calculation; used by reporting tooling).
+        # result calculation; used by reporting tooling). They describe the
+        # signal -> entry funnel: detector fires (_signal_count), passed the
+        # randomness engine (_random_refusal_count skipped), risk-gate
+        # blocking (max open / cooldown / daily / weekly loss), and minimum
+        # lot sizing refusals (_size_refusal_count).
         self._signal_count = 0
         self._entry_count = 0
         self._size_refusal_count = 0
+        self._random_refusal_count = 0
+        self._max_open_refusal_count = 0
+        self._cooldown_refusal_count = 0
+        self._daily_loss_refusal_count = 0
+        self._weekly_loss_refusal_count = 0
+
+        # Optional risk-limit simulation (off by default so historical runs
+        # keep their existing semantics; enabled per-call for the real-data
+        # validation report). Mirrors RiskManager: max_daily_loss (5%),
+        # max_weekly_loss (10%), cooldown_after_loss trades, max_open_trades.
+        self.enforce_risk_limits = False
+        self._risk_daily_pnl = 0.0
+        self._risk_daily_date = None
+        self._risk_weekly_pnl = 0.0
+        self._risk_week_start = None
+        self._risk_cooldown_remaining = 0
 
         # Vectorized pre-filter for the per-bar detector (see
         # MarketAnalyzer.precompute_verdict_mask). None disables the fast
@@ -178,7 +198,8 @@ class Backtester:
         data: pd.DataFrame,
         asset: str,
         start_date: datetime,
-        end_date: datetime
+        end_date: datetime,
+        enforce_risk_limits: bool = False
     ) -> BacktestResult:
         """
         Run backtest on historical data.
@@ -188,6 +209,10 @@ class Backtester:
             asset: Asset symbol
             start_date: Start date
             end_date: End date
+            enforce_risk_limits: When True, mirror the live RiskManager rules
+                (daily/weekly loss caps, cooldown after losses, max open
+                positions) during simulation. Default False preserves the
+                existing pipeline semantics.
             
         Returns:
             BacktestResult object
@@ -205,6 +230,19 @@ class Backtester:
             self._signal_count = 0
             self._entry_count = 0
             self._size_refusal_count = 0
+            self._random_refusal_count = 0
+            self._max_open_refusal_count = 0
+            self._cooldown_refusal_count = 0
+            self._daily_loss_refusal_count = 0
+            self._weekly_loss_refusal_count = 0
+            self.enforce_risk_limits = enforce_risk_limits
+            self._risk_daily_pnl = 0.0
+            self._risk_daily_date = None
+            self._risk_weekly_pnl = 0.0
+            self._risk_week_start = data.index.min().normalize() - pd.Timedelta(
+                days=data.index.min().weekday()
+            )
+            self._risk_cooldown_remaining = 0
             self._verdict_mask = self.analyzer.precompute_verdict_mask(data, asset)
             
             # Initialize
@@ -229,14 +267,49 @@ class Backtester:
                 for closed_trade in closed_trades:
                     trades.append(closed_trade)
                     capital += closed_trade.pnl
+                    if self.enforce_risk_limits:
+                        # Mirror RiskManager.record_trade_pnl using the
+                        # simulated clock (day/week rollovers handled by
+                        # _risk_roll_windows on the next bar).
+                        self._risk_daily_pnl += closed_trade.pnl
+                        self._risk_weekly_pnl += closed_trade.pnl
+                        if closed_trade.pnl < 0:
+                            self._risk_cooldown_remaining = RISK_MANAGEMENT['cooldown_after_loss']
+                        else:
+                            self._risk_cooldown_remaining = 0
                 
                 # Check for bad luck moment on a bounded window (the detector only
                 # needs ~40 bars of context; slicing the growing frame every
                 # bar turned the simulation O(n^2) on long histories).
                 window = data.iloc[max(0, i - 63):i + 1]
                 signal = self._check_signal(window, asset, current_time)
-                
-                if signal and len(open_positions) < self.max_open_trades:
+
+                if signal and self.enforce_risk_limits:
+                    # Mirror RiskManager.can_open_trade gate ordering:
+                    # daily loss -> weekly loss -> max positions -> cooldown.
+                    self._risk_roll_windows(current_time)
+                    daily_limit = capital * RISK_MANAGEMENT['max_daily_loss']
+                    if self._risk_daily_pnl < -daily_limit:
+                        self._daily_loss_refusal_count += 1
+                        signal = None
+                    else:
+                        weekly_limit = capital * RISK_MANAGEMENT['max_weekly_loss']
+                        if self._risk_weekly_pnl < -weekly_limit:
+                            self._weekly_loss_refusal_count += 1
+                            signal = None
+
+                if signal and len(open_positions) >= self.max_open_trades:
+                    self._max_open_refusal_count += 1
+                    signal = None
+
+                if signal and self.enforce_risk_limits and self._risk_cooldown_remaining > 0:
+                    # Each blocked opportunity depletes the cooldown (same
+                    # behaviour as RiskManager.update_cooldown).
+                    self._cooldown_refusal_count += 1
+                    self._risk_cooldown_remaining -= 1
+                    signal = None
+
+                if signal:
                     # Execute trade
                     position = self._execute_trade(
                         signal,
@@ -287,6 +360,20 @@ class Backtester:
             self.logger.error(f"Backtest error: {e}")
             return self._create_error_result(str(e))
     
+    def _risk_roll_windows(self, current_time: datetime) -> None:
+        """Roll the simulated daily/weekly loss windows (mirrors
+        RiskManager._check_reset_periods but keyed to the simulated clock)."""
+        today = current_time.date()
+        week_start = current_time.normalize() - pd.Timedelta(days=current_time.weekday())
+        if self._risk_daily_date is None:
+            self._risk_daily_date = today
+        elif today > self._risk_daily_date:
+            self._risk_daily_pnl = 0.0
+            self._risk_daily_date = today
+        if week_start > self._risk_week_start:
+            self._risk_weekly_pnl = 0.0
+            self._risk_week_start = week_start
+
     def _check_signal(
         self,
         data: pd.DataFrame,
@@ -329,6 +416,7 @@ class Backtester:
         # Organized randomness decision (same engine as live trading)
         should_enter, _ = self.decision_engine.decide_on_bad_luck_moment(moment)
         if not should_enter:
+            self._random_refusal_count += 1
             return None
 
         return {

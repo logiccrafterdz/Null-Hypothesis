@@ -45,7 +45,8 @@ pip install -r requirements.txt
 python -m pytest tests/ -q
 
 # 3. Real data (option A): export MT5 history to data/raw/
-python scripts/export_mt5_history.py --symbols XAUUSD GBPJPY EURUSD --days 730
+#    (server times converted to UTC; offset auto-documented in the CSV header)
+python scripts/download_mt5_history.py --symbols XAUUSD GBPJPY EURUSD --days 730
 
 # 3. Synthetic fixtures (option B): reproducible pipeline-validation data
 #    (substitutes when MT5 is unavailable; NEVER treated as real history)
