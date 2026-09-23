@@ -35,6 +35,14 @@ Corrected results for the current code are in
 on synthetic fixtures — not a real-market claim; see that report before
 drawing any conclusion).
 
+**Real-history validation** is in `reports/real_history_backtest_report.md`
+(real FBS MT5 M15 broker data, 2 years, UTC-normalized). Finding phrased
+plainly: at the configured thresholds the detector NEVER fires on these
+instruments' 15-minute data — a bar with both `drop >= 3%` AND `volume >= 2x`
+does not occur once in 2 years for XAUUSD/GBPJPY/EURUSD. The strategy, as
+configured, is effectively dormant on real markets. No thresholds were tuned
+for this exercise; that calibration work is open research.
+
 ## How to Use
 
 ```bash
@@ -46,6 +54,9 @@ python -m pytest tests/ -q
 
 # 3. Real data (option A): export MT5 history to data/raw/
 #    (server times converted to UTC; offset auto-documented in the CSV header)
+#    Use --server-utc-offset 3 on FBS (measured). If you must export by hand
+#    from the MT5 History Center, normalize with:
+#    python scripts/import_manual_history.py --input exported.csv --symbol XAUUSD --server-utc-offset 3
 python scripts/download_mt5_history.py --symbols XAUUSD GBPJPY EURUSD --days 730
 
 # 3. Synthetic fixtures (option B): reproducible pipeline-validation data
@@ -55,7 +66,14 @@ python scripts/generate_synthetic_data.py --symbols XAUUSD GBPJPY EURUSD --days 
 # 4. Run one asset through the corrected backtester
 python main.py --mode backtest --asset XAUUSD --days 365
 
-# 5. Generate the post-fix validation report
+# 5. Validate the quality of real data in data/raw
+python scripts/validate_real_data.py
+
+# 6. Real-history backtest report with risk limits enforced
+#    (min-lot feasibility + statistical adequacy + honest verdict)
+python scripts/generate_real_report.py --days 730 --capital 20000
+
+# 7. Generate the post-fix (synthetic/pipeline) report
 python scripts/generate_backtest_report.py --days 365 --capital 10000
 ```
 
