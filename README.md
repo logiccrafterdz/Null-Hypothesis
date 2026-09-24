@@ -30,7 +30,7 @@ And the truth is more valuable.
 
 - Read the full journey: [JOURNEY.md](JOURNEY.md)
 - Read the key findings: [FINDINGS.md](FINDINGS.md)
-- Explore the visual showcase: [GitHub Pages](https://logiccrafterdz.github.io/phoenix-protocol/)
+- Explore the visual showcase: [GitHub Pages](https://logiccrafterdz.github.io/Null-Hypothesis/)
 
 ## Quick Summary
 
