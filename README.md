@@ -101,6 +101,19 @@ python scripts/analyze_signal_feasibility.py
 # 9. Research backtests of the relaxed candidates (writes
 #    reports/research_candidate_backtests.md)
 python scripts/run_research_backtests.py
+
+# 10. Random hypothesis mining / Chaos Discovery Engine (Phase 10 research;
+#     validates the mining backtester against the Phase-8 reference, backtests
+#     a seeded pool of random strategies, compares them to a random-entry luck
+#     baseline, applies primary/robustness/FDR filters and writes top strategies
+#     to config/mined_strategies/ + reports/mining_summary.md). Research only.
+python scripts/run_mining_session.py --quota 2000 --luck 800
+
+#    Rebuild all reports from a saved run (no re-compute):
+python scripts/run_mining_session.py --finalize-only
+
+#    Check only that the mining backtester reproduces the Phase-8 reference:
+python scripts/run_mining_session.py --validate-only
 ```
 
 If you want to actually use real money:

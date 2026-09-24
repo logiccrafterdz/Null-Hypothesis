@@ -1,0 +1,38 @@
+{
+  "asset": "XAUUSD",
+  "primary": 3,
+  "robust": 2,
+  "final": 2,
+  "metrics": [
+    {
+      "id": "XAUUSD_M15_56202",
+      "direction": "LONG",
+      "total_trades": 178,
+      "winrate": 0.651685393258427,
+      "profit_factor": 1.7262717525564852,
+      "total_return_pct": 0.10911723040527166,
+      "max_dd_pct": 0.023840814257185143,
+      "sharpe": 1.2580815295509518,
+      "expectancy": 7.508418720351222,
+      "luck_p": 0.0275,
+      "luck_p95": true,
+      "sens": 0.8888888888888888,
+      "composite": 105.21148826476372
+    },
+    {
+      "id": "XAUUSD_M15_28590",
+      "direction": "LONG",
+      "total_trades": 224,
+      "winrate": 0.5,
+      "profit_factor": 1.3279264558097568,
+      "total_return_pct": 0.125377905180853,
+      "max_dd_pct": 0.10629721903507537,
+      "sharpe": 0.5456263552500882,
+      "expectancy": 7.352984878714818,
+      "luck_p": 0.02375,
+      "luck_p95": true,
+      "sens": 0.8888888888888888,
+      "composite": 53.798345292936084
+    }
+  ]
+}

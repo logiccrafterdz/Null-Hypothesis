@@ -70,6 +70,10 @@ reports/*
 !reports/signal_feasibility_report.md
 !reports/research_candidate_backtests.md
 !reports/threshold_calibration_report.md
+!reports/mining_summary.md
+!reports/top_strategies_report.md
+!reports/mining_summary.json
+!reports/mining_*_results.json
 
 # Notebooks
 notebooks/.ipynb_checkpoints/

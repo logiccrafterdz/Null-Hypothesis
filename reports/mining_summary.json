@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-09-24T19:01:11+00:00",
+  "validation": {
+    "XAUUSD": {
+      "ground_truth": {
+        "signals": 983,
+        "executed": 336,
+        "return_pct": -0.3569
+      },
+      "recorded": {
+        "signals": 983,
+        "executed": 336,
+        "return_pct": -0.3569
+      },
+      "ground_truth_matches_report": true,
+      "reference_no_gate": {
+        "trades": 490,
+        "return_pct": -0.364
+      },
+      "engine": {
+        "trades": 487,
+        "return_pct": -0.3605,
+        "signals": 980
+      },
+      "engine_equivalent": true,
+      "ok": true
+    },
+    "EURUSD": {
+      "ground_truth": {
+        "signals": 106,
+        "executed": 36,
+        "return_pct": -0.0094
+      },
+      "recorded": null,
+      "ground_truth_matches_report": true,
+      "reference_no_gate": {
+        "trades": 45,
+        "return_pct": -0.0396
+      },
+      "engine": {
+        "trades": 45,
+        "return_pct": -0.0396,
+        "signals": 106
+      },
+      "engine_equivalent": true,
+      "ok": true
+    }
+  },
+  "assets": {
+    "XAUUSD": {
+      "generated": 2000,
+      "primary_survivors": 3,
+      "robust_survivors": 2,
+      "final_survivors": 2,
+      "top5": [
+        "XAUUSD_M15_56202",
+        "XAUUSD_M15_28590"
+      ]
+    },
+    "EURUSD": {
+      "generated": 2000,
+      "primary_survivors": 0,
+      "robust_survivors": 0,
+      "final_survivors": 0,
+      "top5": []
+    }
+  }
+}

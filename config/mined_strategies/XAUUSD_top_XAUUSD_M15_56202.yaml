@@ -1,0 +1,42 @@
+id: XAUUSD_M15_56202
+asset: XAUUSD
+timeframe: M15
+discovered_at: '2026-09-24T19:03:06+00:00'
+direction: LONG
+entry:
+  operator: mixed
+  conditions:
+  - type: close_near_high
+    params:
+      x: 0.7
+  - type: vol_ratio_prev
+    params:
+      x: 2.5
+  - type: n_up_candles
+    params:
+      n: 8
+exits:
+  stop_loss_pct: 0.025
+  take_profit_pct: 0.005
+  trailing: true
+  trailing_activation_pct: 0.005
+  trailing_distance_pct: 0.005
+  max_duration_bars: 45
+risk:
+  risk_per_trade: 0.02
+  max_open: 2
+metrics:
+  id: XAUUSD_M15_56202
+  direction: LONG
+  total_trades: 178
+  winrate: 0.651685393258427
+  profit_factor: 1.7262717525564852
+  total_return_pct: 0.10911723040527166
+  max_dd_pct: 0.023840814257185143
+  sharpe: 1.2580815295509518
+  expectancy: 7.508418720351222
+  luck_p: 0.0275
+  luck_p95: true
+  sens: 0.8888888888888888
+  composite: 105.21148826476372
+status: research_candidate

@@ -1,0 +1,41 @@
+id: XAUUSD_M15_28590
+asset: XAUUSD
+timeframe: M15
+discovered_at: '2026-09-24T19:03:06+00:00'
+direction: LONG
+entry:
+  operator: and
+  conditions:
+  - type: macd_hist_lt0
+    params: {}
+  - type: vol_z_lt
+    params:
+      w: 100
+      x: 1.5
+  - type: vol_falling
+    params: {}
+exits:
+  stop_loss_pct: 0.02
+  take_profit_pct: 0.04
+  trailing: false
+  trailing_activation_pct: 0.005
+  trailing_distance_pct: 0.008
+  max_duration_bars: 35
+risk:
+  risk_per_trade: 0.02
+  max_open: 2
+metrics:
+  id: XAUUSD_M15_28590
+  direction: LONG
+  total_trades: 224
+  winrate: 0.5
+  profit_factor: 1.3279264558097568
+  total_return_pct: 0.125377905180853
+  max_dd_pct: 0.10629721903507537
+  sharpe: 0.5456263552500882
+  expectancy: 7.352984878714818
+  luck_p: 0.02375
+  luck_p95: true
+  sens: 0.8888888888888888
+  composite: 53.798345292936084
+status: research_candidate
