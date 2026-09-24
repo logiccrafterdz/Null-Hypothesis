@@ -1,5 +1,5 @@
 """
-Credentials Management for Phoenix Protocol Trading System
+Credentials Management for Null Hypothesis Trading System
 Handles encrypted storage and retrieval of broker credentials.
 """
 
@@ -35,7 +35,7 @@ class CredentialsManager:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=b'phoenix_protocol_salt',  # In production, use random salt
+            salt=b'null_hypothesis_salt',  # In production, use random salt
             iterations=480000,
         )
         key = base64.urlsafe_b64encode(kdf.derive(self.encryption_key.encode()))
@@ -141,14 +141,14 @@ def get_database_credentials() -> Dict[str, str]:
         return {
             "host": creds_manager.get_credential("DB_HOST") or os.getenv("DB_HOST", "localhost"),
             "port": creds_manager.get_credential("DB_PORT") or os.getenv("DB_PORT", "5432"),
-            "database": creds_manager.get_credential("DB_NAME") or os.getenv("DB_NAME", "phoenix_protocol"),
+            "database": creds_manager.get_credential("DB_NAME") or os.getenv("DB_NAME", "null_hypothesis"),
             "user": creds_manager.get_credential("DB_USER") or os.getenv("DB_USER", "postgres"),
             "password": creds_manager.get_credential("DB_PASSWORD") or os.getenv("DB_PASSWORD", ""),
         }
     return {
         "host": os.getenv("DB_HOST", "localhost"),
         "port": os.getenv("DB_PORT", "5432"),
-        "database": os.getenv("DB_NAME", "phoenix_protocol"),
+        "database": os.getenv("DB_NAME", "null_hypothesis"),
         "user": os.getenv("DB_USER", "postgres"),
         "password": os.getenv("DB_PASSWORD", ""),
     }

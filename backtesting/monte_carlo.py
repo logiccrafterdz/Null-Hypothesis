@@ -1,5 +1,5 @@
 """
-Monte Carlo Simulation for Phoenix Protocol Trading System
+Monte Carlo Simulation for Null Hypothesis Trading System
 Implements Monte Carlo simulation for statistical validation.
 """
 

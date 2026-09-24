@@ -1,5 +1,5 @@
 """
-Risk Manager for Phoenix Protocol Trading System
+Risk Manager for Null Hypothesis Trading System
 Implements comprehensive risk management and position sizing.
 """
 

@@ -1,5 +1,5 @@
 """
-Setup script for Phoenix Protocol Trading System
+Setup script for Null Hypothesis Quant Research Engine
 """
 
 from setuptools import setup, find_packages
@@ -8,17 +8,18 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="phoenix-protocol",
+    name="null-hypothesis",
     version="1.0.0",
-    author="Phoenix Protocol Team",
-    description="Algorithmic trading system based on Bad Luck Moment exploitation",
+    author="Null Hypothesis Team",
+    description="A quant research engine that set out to find alpha and proved its own null hypothesis instead",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Financial and Insurance Industry",
         "Topic :: Office/Business :: Financial :: Investment",
+        "Topic :: Scientific/Engineering",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.11",
@@ -41,7 +42,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "phoenix-protocol=main:main",
+            "null-hypothesis=main:main",
         ],
     },
 )

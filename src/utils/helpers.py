@@ -1,5 +1,5 @@
 """
-Helper Functions for Phoenix Protocol Trading System
+Helper Functions for Null Hypothesis Trading System
 Common utility functions used across the system.
 """
 

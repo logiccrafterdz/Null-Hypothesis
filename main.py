@@ -1,5 +1,5 @@
 """
-Main Entry Point for Phoenix Protocol Trading System
+Main Entry Point for Null Hypothesis Trading System
 Coordinates all components and runs the trading bot.
 """
 
@@ -31,7 +31,7 @@ def setup_system():
         Dictionary with initialized components
     """
     logger = get_logger()
-    logger.info("Initializing Phoenix Protocol Trading System")
+    logger.info("Initializing Null Hypothesis Trading System")
     
     # Initialize unified broker
     unified_broker = UnifiedBroker()
@@ -259,7 +259,7 @@ def generate_sample_data_mode(components: dict, args):
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Phoenix Protocol Trading System")
+    parser = argparse.ArgumentParser(description="Null Hypothesis Trading System")
     
     # Mode selection
     parser.add_argument(

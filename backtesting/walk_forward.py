@@ -1,5 +1,5 @@
 """
-Walk-Forward Analysis for Phoenix Protocol Trading System
+Walk-Forward Analysis for Null Hypothesis Trading System
 Implements walk-forward analysis for robust strategy validation.
 """
 

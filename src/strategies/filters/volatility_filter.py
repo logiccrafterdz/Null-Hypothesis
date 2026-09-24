@@ -1,5 +1,5 @@
 """
-Volatility Filter for Phoenix Protocol Trading System
+Volatility Filter for Null Hypothesis Trading System
 Optional volatility-based filter for additional signal confirmation.
 """
 

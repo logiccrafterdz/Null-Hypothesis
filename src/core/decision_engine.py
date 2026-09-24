@@ -1,5 +1,5 @@
 """
-Random Decision Engine for Phoenix Protocol Trading System
+Random Decision Engine for Null Hypothesis Trading System
 Implements organized randomness in entry decisions to avoid prediction.
 """
 

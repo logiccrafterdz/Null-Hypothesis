@@ -1,5 +1,5 @@
 """
-Base Strategy Class for Phoenix Protocol Trading System
+Base Strategy Class for Null Hypothesis Trading System
 Provides abstract base class for all trading strategies.
 """
 

@@ -1,5 +1,5 @@
 """
-Streamlit Dashboard for Phoenix Protocol Trading System
+Streamlit Dashboard for Null Hypothesis Trading System
 Interactive monitoring and visualization dashboard.
 """
 
@@ -34,7 +34,7 @@ def initialize_session_state():
 def render_sidebar():
     """Render sidebar navigation."""
     with st.sidebar:
-        st.title("Phoenix Protocol")
+        st.title("Null Hypothesis")
         st.markdown("---")
         
         # Navigation
@@ -626,7 +626,7 @@ def render_backtest_results():
 def main():
     """Main dashboard entry point."""
     st.set_page_config(
-        page_title="Phoenix Protocol Dashboard",
+        page_title="Null Hypothesis Dashboard",
         page_icon="📊",
         layout="wide",
         initial_sidebar_state="expanded"

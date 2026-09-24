@@ -196,7 +196,7 @@ def validate_symbol(path: Path, symbol: str, tf: str) -> dict:
 def render(stats: list, out: Path) -> None:
     lines = []
     a = lines.append
-    a("# Phoenix Protocol - Real Historical Data Quality Report")
+    a("# Null Hypothesis - Real Historical Data Quality Report")
     a("")
     a("> Source: MetaTrader 5 terminal export (real broker history, FBS-Demo). "
       "Server times converted to UTC using the empirically measured +3h "

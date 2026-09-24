@@ -1,5 +1,5 @@
 """
-MetaTrader 5 Connector for Phoenix Protocol Trading System
+MetaTrader 5 Connector for Null Hypothesis Trading System
 Implements broker interface for MetaTrader 5 platform.
 """
 
@@ -293,7 +293,7 @@ class MT5Connector(BrokerInterface):
             "tp": order.take_profit,
             "deviation": 20,
             "magic": 234000,
-            "comment": "Phoenix Protocol",
+            "comment": "Null Hypothesis",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -463,7 +463,7 @@ class MT5Connector(BrokerInterface):
             "price": price,
             "deviation": 20,
             "magic": 234000,
-            "comment": "Phoenix Protocol Close",
+            "comment": "Null Hypothesis Close",
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_IOC,
         }

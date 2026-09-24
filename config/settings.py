@@ -1,11 +1,15 @@
 """
-Global Settings Configuration for Phoenix Protocol Trading System
+Global Settings Configuration for Null Hypothesis Trading System
 All configurable parameters are centralized here for easy adjustment.
 """
 
 from typing import Dict, Any
 from pathlib import Path
 import os
+
+# Project identity
+PROJECT_NAME = "Null Hypothesis"
+PROJECT_TAGLINE = "A Quant Research Engine That Proved Its Own Null Hypothesis"
 
 # Base paths
 BASE_DIR = Path(__file__).parent.parent
@@ -19,7 +23,7 @@ SQLITE_PATH = DATA_DIR / "trading.db"
 POSTGRES_CONFIG = {
     "host": os.getenv("POSTGRES_HOST", "localhost"),
     "port": int(os.getenv("POSTGRES_PORT", "5432")),
-    "database": os.getenv("POSTGRES_DB", "phoenix_protocol"),
+    "database": os.getenv("POSTGRES_DB", "null_hypothesis"),
     "user": os.getenv("POSTGRES_USER", "postgres"),
     "password": os.getenv("POSTGRES_PASSWORD", ""),
 }

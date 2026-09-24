@@ -1,5 +1,5 @@
 """
-Strategy Parameters for Phoenix Protocol Bad Luck Moment Strategy
+Strategy Parameters for Null Hypothesis Bad Luck Moment Strategy
 All strategy-specific parameters are configurable here.
 """
 

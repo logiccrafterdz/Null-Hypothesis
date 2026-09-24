@@ -1,5 +1,5 @@
 """
-Bad Luck Moment Strategy for Phoenix Protocol Trading System
+Bad Luck Moment Strategy for Null Hypothesis Trading System
 Implements the main strategy based on detecting capitulation moments.
 """
 

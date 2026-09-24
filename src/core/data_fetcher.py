@@ -1,5 +1,5 @@
 """
-Data Fetcher for Phoenix Protocol Trading System
+Data Fetcher for Null Hypothesis Trading System
 Handles multi-source data fetching with local storage and caching.
 """
 

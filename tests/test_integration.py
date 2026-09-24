@@ -1,5 +1,5 @@
 """
-Integration tests for Phoenix Protocol end-to-end workflow.
+Integration tests for Null Hypothesis end-to-end workflow.
 Tests the complete trading pipeline from data fetch to trade execution.
 """
 

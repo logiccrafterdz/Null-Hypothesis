@@ -242,7 +242,7 @@ def sample_trade_row(trade, idx):
 def render(report, args):
     lines = []
     a = lines.append
-    a("# Phoenix Protocol - Real Historical Data Backtest Report")
+    a("# Null Hypothesis - Real Historical Data Backtest Report")
     a("")
     a("> Source: REAL market history exported from the FBS MetaTrader 5 "
       "terminal (Demo account). This is a strategy evaluation on historical "

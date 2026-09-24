@@ -1,5 +1,5 @@
 """
-Technical Indicators for Phoenix Protocol Trading System
+Technical Indicators for Null Hypothesis Trading System
 Custom technical indicators for market analysis.
 """
 

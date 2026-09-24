@@ -1,5 +1,5 @@
 """
-Trade Executor for Phoenix Protocol Trading System
+Trade Executor for Null Hypothesis Trading System
 Handles trade execution, order management, and position monitoring.
 """
 

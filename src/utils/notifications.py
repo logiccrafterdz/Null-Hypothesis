@@ -1,5 +1,5 @@
 """
-Notification System for Phoenix Protocol Trading System
+Notification System for Null Hypothesis Trading System
 Handles Telegram notifications for trading events.
 """
 

@@ -1,5 +1,5 @@
 """
-Backtesting Engine for Phoenix Protocol Trading System
+Backtesting Engine for Null Hypothesis Trading System
 Comprehensive backtesting with realistic trade simulation.
 """
 

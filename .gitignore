@@ -74,6 +74,8 @@ reports/*
 !reports/top_strategies_report.md
 !reports/mining_summary.json
 !reports/mining_*_results.json
+!reports/phase_11_final_verdict.md
+!reports/strategy_56202_*.md
 
 # Notebooks
 notebooks/.ipynb_checkpoints/

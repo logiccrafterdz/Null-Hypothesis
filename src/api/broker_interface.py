@@ -1,5 +1,5 @@
 """
-Unified Broker Interface for Phoenix Protocol Trading System
+Unified Broker Interface for Null Hypothesis Trading System
 Provides a unified interface for MetaTrader 5 trading platform.
 """
 

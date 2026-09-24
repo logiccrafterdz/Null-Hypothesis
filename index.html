@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Null Hypothesis — A Quant Research Journey</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --bg-soft: #11161d;
+    --bg-card: #161d26;
+    --border: #232e3b;
+    --text: #dbe4ee;
+    --text-dim: #8aa0b5;
+    --gold: #d4a847;
+    --amber: #e0a83c;
+    --red: #e05c5c;
+    --green: #4caf7d;
+    --blue: #5c9ce0;
+    --font: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(212, 168, 71, .35); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+  h1, h2, h3 { font-weight: 650; letter-spacing: .2px; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(212,168,71,.12), transparent 60%),
+      radial-gradient(900px 500px at 85% 110%, rgba(92,156,224,.08), transparent 60%),
+      var(--bg);
+    text-align: center;
+  }
+  .kicker {
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: .45em;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 26px;
+  }
+  .hero h1 {
+    font-size: clamp(2.6rem, 7vw, 5rem);
+    line-height: 1.1;
+    background: linear-gradient(120deg, #fff 0%, var(--gold) 55%, #fff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .tagline {
+    margin-top: 22px;
+    font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+    color: var(--text);
+    max-width: 760px;
+    margin-left: auto; margin-right: auto;
+  }
+  .tagline em { color: var(--gold); font-style: normal; }
+  .hero-stats {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 34px;
+    margin-top: 52px;
+  }
+  .stat { min-width: 150px; }
+  .stat .num-frame {
+    font-family: var(--mono);
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .stat .lbl {
+    font-size: 13px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .18em; margin-top: 6px;
+  }
+  .scroll-hint {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    color: var(--text-dim); font-size: 13px; letter-spacing: .2em;
+    animation: bob 2.2s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 8px); } }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 90px 0; }
+  .sec-title {
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    margin-bottom: 12px;
+  }
+  .sec-sub {
+    color: var(--text-dim);
+    max-width: 720px;
+    margin-bottom: 44px;
+    font-size: 1.02rem;
+  }
+
+  /* ---------- QUESTION ---------- */
+  .question-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .q-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+  }
+  .q-card h3 { color: var(--gold); font-size: 1.15rem; margin-bottom: 10px; }
+  .q-card p { color: var(--text-dim); font-size: .98rem; }
+  @media (max-width: 760px) { .question-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- TIMELINE ---------- */
+  .timeline { position: relative; margin-left: 12px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 18px; top: 6px; bottom: 6px;
+    width: 2px; background: linear-gradient(var(--border), var(--border));
+  }
+  .tl-item { position: relative; padding: 0 0 26px 64px; }
+  .tl-item::before {
+    content: attr(data-phase);
+    position: absolute; left: 0; top: 2px; width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  }
+  .tl-item.pass::before { border-color: var(--green); color: var(--green); }
+  .tl-item.warn::before { border-color: var(--amber); color: var(--amber); }
+  .tl-item.fail::before { border-color: var(--red); color: var(--red); }
+  .tl-head {
+    cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .tl-head h3 { font-size: 1.12rem; }
+  .result-badge {
+    font-size: 12px; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; letter-spacing: .05em; text-transform: uppercase;
+  }
+  .badge-pass { background: rgba(76,175,125,.16); color: var(--green); border: 1px solid rgba(76,175,125,.4); }
+  .badge-warn { background: rgba(224,168,60,.14); color: var(--amber); border: 1px solid rgba(224,168,60,.4); }
+  .badge-fail { background: rgba(224,92,92,.14); color: var(--red); border: 1px solid rgba(224,92,92,.4); }
+  .tl-body {
+    color: var(--text-dim); font-size: .96rem; margin-top: 8px;
+    max-height: 0; overflow: hidden; transition: max-height .45s ease;
+  }
+  .tl-item.open .tl-body { max-height: 240px; }
+  .tl-chev { color: var(--text-dim); transition: transform .3s; margin-left: auto; }
+  .tl-item.open .tl-chev { transform: rotate(180deg); }
+  @media (max-width: 760px) {
+    .timeline { margin-left: 0; }
+    .tl-item { padding-left: 52px; }
+    .tl-item::before { left: -4px; }
+  }
+
+  /* ---------- FUNNEL ---------- */
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 20px 0 30px; }
+  .fn-row {
+    width: 100%;
+    background: linear-gradient(90deg, rgba(212,168,71,.08), rgba(212,168,71,.02));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 22px;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .fn-row:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.45); }
+  .fn-label { font-size: .94rem; font-weight: 600; }
+  .fn-count {
+    font-family: var(--mono); font-weight: 700; font-size: 1.15rem;
+    color: var(--gold); white-space: nowrap;
+  }
+  .fn-count .pct { color: var(--text-dim); font-size: .8rem; margin-left: 6px; font-weight: 400; }
+  .fn-row.final { border-color: var(--red); background: linear-gradient(90deg, rgba(224,92,92,.12), rgba(224,92,92,.02)); }
+  .fn-row.final .fn-count { color: var(--red); }
+
+  /* ---------- CHARTS ---------- */
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .chart-card h3 { font-size: 1.05rem; margin-bottom: 16px; }
+  .chart-box { position: relative; height: 300px; }
+  @media (max-width: 860px) { .chart-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- FINDINGS ---------- */
+  .find-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .find-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .find-card:hover { transform: translateY(-3px); box-shadow: 0 10px 34px rgba(0,0,0,.4); }
+  .find-card .fn { font-family: var(--mono); font-size: 12px; letter-spacing: .25em; color: var(--text-dim); }
+  .find-card h3 { margin: 8px 0 12px; font-size: 1.05rem; }
+  .find-card .fr { color: var(--text-dim); font-size: .93rem; }
+  .find-card .big { font-family: var(--mono); color: var(--gold); font-size: 1.5rem; margin: 8px 0 4px; }
+  .find-card.neg { border-top: 3px solid var(--red); }
+  .find-card.idea { border-top: 3px solid var(--gold); }
+  .find-card .fr b { color: var(--text); font-weight: 600; }
+
+  /* ---------- BETA REVELATION ---------- */
+  .beta-split { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .beta-card { border-radius: 14px; padding: 26px; border: 1px solid var(--border); }
+  .beta-card.left { background: linear-gradient(150deg, rgba(92,156,224,.10), var(--bg-card)); }
+  .beta-card.right { background: linear-gradient(150deg, rgba(224,92,92,.10), var(--bg-card)); }
+  .beta-card small { text-transform: uppercase; letter-spacing: .22em; color: var(--text-dim); font-size: 11px; }
+  .beta-card h3 { margin: 8px 0 14px; font-size: 1.25rem; }
+  .beta-card p { color: var(--text-dim); font-size: .95rem; }
+  .beta-card.right h3 { color: var(--red); }
+  .beta-card.left h3 { color: var(--blue); }
+  .smoking-gun {
+    margin-top: 26px; text-align: center; padding: 16px;
+    border: 1px dashed var(--gold); border-radius: 12px; color: var(--gold);
+    font-family: var(--mono); font-size: .95rem;
+  }
+  @media (max-width: 760px) { .beta-split { grid-template-columns: 1fr; } }
+
+  /* ---------- LESSONS ---------- */
+  .lessons { counter-reset: ls; }
+  .lesson {
+    padding: 20px 0; border-bottom: 1px solid var(--border);
+    display: flex; gap: 18px; align-items: baseline;
+    opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s;
+  }
+  .lesson.visible { opacity: 1; transform: none; }
+  .lesson .n {
+    counter-increment: ls; flex: none;
+    font-family: var(--mono); color: var(--gold); font-size: 1.1rem; width: 34px;
+  }
+  .lesson .n::before { content: counter(ls, decimal-leading-zero); }
+  .lesson p { color: var(--text); font-size: 1.04rem; }
+  .lesson p em { color: var(--gold); font-style: normal; }
+
+  /* ---------- ENGINE ---------- */
+  .engine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+  .eng-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .eng-card h3 { color: var(--gold); font-size: 1rem; margin-bottom: 8px; }
+  .eng-card ul { list-style: none; }
+  .eng-card li { color: var(--text-dim); font-size: .9rem; padding: 3px 0; }
+  .eng-card li b { color: var(--text); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 60px 0 40px; text-align: center; color: var(--text-dim);
+  }
+  .links a {
+    color: var(--gold); text-decoration: none; margin: 0 14px;
+    font-size: .95rem; border-bottom: 1px solid transparent;
+    transition: border-color .2s;
+  }
+  .links a:hover { border-color: var(--gold); }
+  .honesty {
+    display: inline-block; margin-top: 26px; padding: 8px 18px;
+    border: 1px solid var(--gold); border-radius: 30px;
+    color: var(--gold); font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+  }
+  .disclaimer { font-size: .82rem; margin-top: 22px; max-width: 640px; margin-left: auto; margin-right: auto; }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal, .lesson { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 1. HERO ============ -->
+<div class="hero">
+  <div class="kicker">A Quant Research Journey</div>
+  <h1>Null Hypothesis</h1>
+  <p class="tagline">We set out to find <em>alpha</em>. We found the <em>truth</em> instead.<br>
+  And the truth is more valuable.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="num-frame"><span data-count="4000">0</span></div><div class="lbl">strategies tested</div></div>
+    <div class="stat"><div class="num-frame"><span data-count="2">0</span></div><div class="lbl">survivors</div></div>
+    <div class="stat"><div class="num-frame"><span data-count="2">0</span></div><div class="lbl">years of real data</div></div>
+    <div class="stat"><div class="num-frame"><span data-count="11">0</span></div><div class="lbl">research phases</div></div>
+    <div class="stat"><div class="num-frame" style="color:var(--red)">0</div><div class="lbl">alpha found</div></div>
+  </div>
+  <div class="scroll-hint">SCROLL</div>
+</div>
+
+<!-- ============ 2. THE QUESTION ============ -->
+<section>
+  <div class="wrap reveal">
+    <h2 class="sec-title">The Question</h2>
+    <p class="sec-sub">Why do most automated trading systems fail to achieve sustainable results?</p>
+    <div class="question-grid">
+      <div class="q-card">
+        <h3>The Original Idea</h3>
+        <p>Wait for a market "Bad Luck Moment" — a capitulation — then enter at the moment of maximum
+        apparent loss probability, because that is precisely when reversal probability peaks. Protect the idea
+        with "organized randomness" so institutional algorithms can't predict it.</p>
+      </div>
+      <div class="q-card">
+        <h3>The Real Question</h3>
+        <p>Does any systematically designed, rigorously tested, statistically honest trading strategy produce a
+        real, out-of-sample edge on actual market data? Not "a pretty equity curve." Not "a backtest that looks
+        amazing." Real edge, or nothing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. THE JOURNEY TIMELINE ============ -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap reveal">
+    <h2 class="sec-title">The Journey</h2>
+    <p class="sec-sub">Eleven phases. Click each phase to expand. Nothing is hidden — including the failures.</p>
+    <div class="timeline">
+
+      <div class="tl-item pass" data-phase="1-6">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>Building the Machine</h3>
+          <span class="result-badge badge-pass">✅ Built</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          Production-grade trading system: bad-luck detector, cryptographic random decision engine,
+          risk manager, trade executor, unified broker abstraction. Structured audit: 92/100, critical bugs
+          found and fixed — including exit orders that were never executed in the backtester. 122 tests passing.
+        </div>
+      </div>
+
+      <div class="tl-item fail" data-phase="07">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>The Reality Check</h3>
+          <span class="result-badge badge-fail">❌ 0 signals</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          First contact with two years of real FBS MT5 data. The full detector stack fired exactly
+          <b>0 times</b>. A 3% drop on M15 is a 99.9th-percentile event for these instruments — it happened
+          once in two years, and failed the volume gate. Backtests on synthetic data can lie.
+        </div>
+      </div>
+
+      <div class="tl-item fail" data-phase="08">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>Calibration Attempts</h3>
+          <span class="result-badge badge-fail">❌ NO-GO</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          Relaxed thresholds produce signals (983 on XAUUSD M15) but zero forward edge — statistically
+          indistinguishable from random. Realised PNL uniformly negative (PF 0.07–0.99). GBPJPY needs ~$127k
+          for a minimum lot. Verdict: flat NO-GO.
+        </div>
+      </div>
+
+      <div class="tl-item fail" data-phase="09">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>The Pivot</h3>
+          <span class="result-badge badge-fail">❌ NO-GO</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          Restructured the thesis: Next-Bar Reversal (correct no-lookahead structure) and Panic Continuation.
+          Both tested rigorously on real data. Both failed. The market kept its secrets.
+        </div>
+      </div>
+
+      <div class="tl-item warn" data-phase="10">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>Chaos Theory</h3>
+          <span class="result-badge badge-warn">⚠️ 2/4000</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          Abandoned human logic entirely. Generated 4,000 random strategies from a 50+ condition library,
+          validated the backtester against Phase-8 reference, measured an 800-strategy luck baseline, and applied
+          primary/robustness/FDR filters. XAUUSD: 2,000 → 2 survivors. EURUSD: 2,000 → 0.
+        </div>
+      </div>
+
+      <div class="tl-item fail" data-phase="11">
+        <div class="tl-head" onclick="toggle(this)">
+          <h3>The Autopsy</h3>
+          <span class="result-badge badge-fail">❌ BETA</span>
+          <span class="tl-chev">▾</span>
+        </div>
+        <div class="tl-body">
+          Forensic dissection of XAUUSD_M15_56202. The SHORT mirror loses −12.86%. Buy-and-hold gold made
+          +62.93% vs the strategy's +10.91%. The single negative OOS window coincides exactly with a gold slide.
+          Verdict: <b>B — DIRECTIONAL BETA, not alpha</b>.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. THE FUNNEL ============ -->
+<section>
+  <div class="wrap reveal">
+    <h2 class="sec-title">The Funnel</h2>
+    <p class="sec-sub">4,000 random strategies. A statistical gauntlet. One truthful answer.</p>
+    <div class="funnel" id="funnel">
+      <div class="fn-row" data-w="100" style="width:100%"><span class="fn-label">Generated</span><span class="fn-count"><span data-count="4000">0</span><span class="pct"></span></span></div>
+      <div class="fn-row" data-w="88" style="width:88%"><span class="fn-label">Passed primary filter</span><span class="fn-count"><span data-count="3">0</span><span class="pct">0.075% survival</span></span></div>
+      <div class="fn-row" data-w="80" style="width:80%"><span class="fn-label">Passed robustness stress</span><span class="fn-count"><span data-count="2">0</span><span class="pct"></span></span></div>
+      <div class="fn-row" data-w="72" style="width:72%"><span class="fn-label">Passed FDR + luck percentile</span><span class="fn-count"><span data-count="2">0</span><span class="pct"></span></span></div>
+      <div class="fn-row" data-w="64" style="width:64%"><span class="fn-label">Survivors forensically examined</span><span class="fn-count"><span data-count="2">0</span><span class="pct">both LONG-only</span></span></div>
+      <div class="fn-row final" data-w="56" style="width:56%"><span class="fn-label">Genuine alpha</span><span class="fn-count"><span data-count="0">0</span><span class="pct">VERDICT: BETA</span></span></div>
+    </div>
+    <p class="sec-sub" style="text-align:center">EURUSD: 2,000 generated → <b style="color:var(--red)">0 survivors</b> — perfectly efficient.</p>
+  </div>
+</section>
+
+<!-- ============ 5. KEY FINDINGS CARDS ============ -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap reveal">
+    <h2 class="sec-title">Key Findings</h2>
+    <p class="sec-sub">Seven discoveries, all backed by reproducible numbers.</p>
+    <div class="find-grid">
+      <div class="find-card neg">
+        <div class="fn">FINDING 01</div>
+        <h3>The Premise is Dead</h3>
+        <div class="big">0 signals / 2y</div>
+        <div class="fr">A 3% M15 drop never truly happens. Largest on record: 3.6% (once, and it failed the volume gate). The "Bad Luck Moment" as defined does not exist.</div>
+      </div>
+      <div class="find-card neg">
+        <div class="fn">FINDING 02</div>
+        <h3>Relaxed Thresholds Have No Edge</h3>
+        <div class="big">PF 0.07–0.99</div>
+        <div class="fr">983 signals on XAUUSD M15 with relaxed gates, but forward returns are indistinguishable from random. Every realised simulation loses money.</div>
+      </div>
+      <div class="find-card neg">
+        <div class="fn">FINDING 03</div>
+        <h3>GBPJPY is Untradeable</h3>
+        <div class="big">~$127k / 0.01 lot</div>
+        <div class="fr">Minimum-lot sizing requires ~$127k at 2% risk. 100% signal refusal even at $100k accounts. A structural barrier, not a parameter issue.</div>
+      </div>
+      <div class="find-card neg">
+        <div class="fn">FINDING 04</div>
+        <h3>EURUSD is Perfectly Efficient</h3>
+        <div class="big">0 / 2000 survive</div>
+        <div class="fr">Not one random strategy survived even the first filter. The strongest evidence in this study that liquid FX is informationally efficient at M15.</div>
+      </div>
+      <div class="find-card idea">
+        <div class="fn">FINDING 05</div>
+        <h3>Only Directional Beta Survives</h3>
+        <div class="big">SHORT −12.86%</div>
+        <div class="fr">Both survivors are LONG-only on a rising asset. The SHORT mirror loses money; buy-and-hold gold (+62.9%) beats the strategy 6x. Surviving is not the same as being good.</div>
+      </div>
+      <div class="find-card neg">
+        <div class="fn">FINDING 06</div>
+        <h3>The 65% Win-Rate Illusion</h3>
+        <div class="big">skew −2.16</div>
+        <div class="fr">A tight +0.5% TP clips 85 wins at a fixed +0.47%; 86 losers extend to max duration. Fat left tail, kurtosis +7.4. The win rate is a presentation artifact, not an edge.</div>
+      </div>
+      <div class="find-card idea">
+        <div class="fn">FINDING 07</div>
+        <h3>The Engine is the Product</h3>
+        <div class="big">133+ tests</div>
+        <div class="fr">FDR correction, Monte Carlo luck baselines, forensic autopsy toolkit, real-data pipeline. This engine can test ANY future hypothesis honestly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. CHARTS ============ -->
+<section>
+  <div class="wrap reveal">
+    <h2 class="sec-title">The Evidence</h2>
+    <p class="sec-sub">Every chart is built from numbers that can be regenerated by the code in this repository.</p>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>The Beta Revelation</h3>
+        <div class="chart-box"><canvas id="cBeta"></canvas></div>
+        <p class="sec-sub" style="margin:16px 0 0;font-size:.9rem">The strategy made less than a passive long. Its "edge" is leverage into a bull market.</p>
+      </div>
+      <div class="chart-card">
+        <h3>Signal Frequency</h3>
+        <div class="chart-box"><canvas id="cSignals"></canvas></div>
+        <p class="sec-sub" style="margin:16px 0 0;font-size:.9rem">Original detector: 0 signals. Relaxed gates: plenty. Frequency was never the problem — edge was.</p>
+      </div>
+      <div class="chart-card">
+        <h3>The Win-Rate Illusion</h3>
+        <div class="chart-box"><canvas id="cExits"></canvas></div>
+        <p class="sec-sub" style="margin:16px 0 0;font-size:.9rem">Where the 178 trades actually ended. Winners are clipped tiny; losers are allowed to bleed.</p>
+      </div>
+      <div class="chart-card">
+        <h3>Phase Outcomes</h3>
+        <div class="chart-box"><canvas id="cPhases"></canvas></div>
+        <p class="sec-sub" style="margin:16px 0 0;font-size:.9rem">Three NO-GOs, one ambiguous survivor round, one beta verdict. Zero false victories.</p>
+      </div>
+    </div>
+    <div class="smoking-gun">THE SMOKING GUN: profits concentrate in STRONG-UP quarters; the only losing quarter is the one where gold itself fell −12.2%. Monthly correlation with gold: +0.43.</div>
+  </div>
+</section>
+
+<!-- ============ 7. BETA vs ALPHA ============ -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap reveal">
+    <h2 class="sec-title">Alpha vs Beta</h2>
+    <p class="sec-sub">What we hoped we had found — and what forensic analysis actually showed.</p>
+    <div class="beta-split">
+      <div class="beta-card left">
+        <small>What we hoped</small>
+        <h3>The Alpha Story</h3>
+        <p>A statistically filtered strategy with a 65.2% win rate, profit factor 1.73, Sharpe 1.26, and a p(luck) below 3%. The mining funnel said it beat random by a mile.
+        <p>It sat at the 99.8th percentile of 500 random LONG strategies.</p>
+      </div>
+      <div class="beta-card right">
+        <small>What it actually was</small>
+        <h3>The Beta Truth</h3>
+        <p>SHORT mirror: −12.86%. Buy-and-hold gold: <b>+62.93%</b> vs strategy +10.91%. Profits live only in strong uptrends; the single losing quarter and the negative OOS window both align with gold declines.
+        <p>The strategy is a noisy, low-leverage way of being long gold. Real alpha: <b>zero</b>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8. THE ENGINE ============ -->
+<section>
+  <div class="wrap reveal">
+    <h2 class="sec-title">What Survived</h2>
+    <p class="sec-sub">The strategy was disproven. The research instrument was built — and it works.</p>
+    <div class="engine-grid">
+      <div class="eng-card">
+        <h3>Statistical Rigor</h3>
+        <ul>
+          <li><b>FDR correction</b> (Benjamini-Hochberg)</li>
+          <li><b>Monte Carlo</b> luck baselines</li>
+          <li><b>p(luck)</b> estimation</li>
+          <li><b>Walk-forward</b> OOS validation</li>
+        </ul>
+      </div>
+      <div class="eng-card">
+        <h3>Forensic Toolkit</h3>
+        <ul>
+          <li><b>SHORT-mirror</b> test</li>
+          <li><b>Buy-and-hold</b> control</li>
+          <li><b>Regime</b> analysis</li>
+          <li><b>Trade-level</b> exit anatomy</li>
+        </ul>
+      </div>
+      <div class="eng-card">
+        <h3>Engineering</h3>
+        <ul>
+          <li><b>133+</b> passing tests</li>
+          <li><b>Real data</b> pipeline (FBS MT5)</li>
+          <li><b>Unified</b> broker abstraction</li>
+          <li><b>Reproducible</b> reports</li>
+        </ul>
+      </div>
+      <div class="eng-card">
+        <h3>Research Philosophy</h3>
+        <ul>
+          <li><b>Never</b> hide a negative result</li>
+          <li><b>Never</b> curve-fit a threshold</li>
+          <li><b>Synthetic data</b> is never evidence</li>
+          <li><b>NO-GO</b> is a valid conclusion</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9. LESSONS ============ -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap">
+    <h2 class="sec-title reveal">Lessons Learned</h2>
+    <div class="lessons">
+      <div class="lesson"><span class="n"></span><p>The market is more efficient than we imagined. A 4,000-strategy search across two liquid instruments found <em>zero</em> exploitable intraday M15 alpha.</p></div>
+      <div class="lesson"><span class="n"></span><p>Most "strategies" sold commercially are <em>disguised beta</em>. Ours was. We only found out because we ran the SHORT mirror and buy-and-hold controls.</p></div>
+      <div class="lesson"><span class="n"></span><p>A 65% win rate can be a <em>presentation artifact</em>. Winners clipped tiny, losers allowed to bleed, symmetric risk hiding asymmetric reward.</p></div>
+      <div class="lesson"><span class="n"></span><p>Random mining plus statistical correction is the <em>only honest method</em>. Measure chance, control the false discovery rate, then autopsy the survivors.</p></div>
+      <div class="lesson"><span class="n"></span><p>A truthful NO-GO is worth more than a deceptive YES. It saved us — and any user — from deploying disguised beta at scale into a regime change.</p></div>
+      <div class="lesson"><span class="n"></span><p>The engine is the real achievement. It refused to lie to us, and it can test <em>any future hypothesis</em> honestly.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. FOOTER ============ -->
+<footer>
+  <div class="links">
+    <a href="https://github.com/logiccrafterdz/phoenix-protocol" target="_blank" rel="noopener">GitHub Repository</a>
+    <a href="./JOURNEY.md">JOURNEY.md</a>
+    <a href="./FINDINGS.md">FINDINGS.md</a>
+    <a href="./README.md">README.md</a>
+  </div>
+  <div class="honesty">Built with scientific integrity</div>
+  <p class="disclaimer">Disclaimer: this project is a research tool and educational resource. It is NOT financial advice.
+  No trading strategy is guaranteed to be profitable. Past performance does not indicate future results.
+  The definitive conclusion of this research is that no exploitable intraday M15 alpha was found.</p>
+</footer>
+
+<script>
+  // ---------- Expandable timeline ----------
+  function toggle(header) {
+    const item = header.parentElement;
+    const open = item.classList.contains("open");
+    document.querySelectorAll(".tl-item.open").forEach(i => i.classList.remove("open"));
+    if (!open) item.classList.add("open");
+  }
+
+  // ---------- Scroll reveal ----------
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible");
+      startCounters(e.target); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal, .lesson").forEach(el => io.observe(el));
+
+  // ---------- Animated counters ----------
+  function startCounters(root) {
+    root.querySelectorAll("[data-count]").forEach(el => {
+      if (el.dataset.done) return;
+      el.dataset.done = "1";
+      const target = parseInt(el.dataset.count, 10);
+      const dur = 1400, t0 = performance.now();
+      const step = (t) => {
+        const p = Math.min(1, (t - t0) / dur);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  // hero counters start on load
+  startCounters(document.body);
+
+  // ---------- Chart.js defaults ----------
+  Chart.defaults.color = "#8aa0b5";
+  Chart.defaults.borderColor = "#232e3b";
+  Chart.defaults.font.family = "Segoe UI, sans-serif";
+  Chart.defaults.font.size = 11;
+
+  // ---------- Beta revelation ----------
+  new Chart(document.getElementById("cBeta"), {
+    type: "bar",
+    data: {
+      labels: ["Strategy LONG", "SHORT mirror", "Buy & Hold gold"],
+      datasets: [{
+        data: [10.91, -12.86, 62.93],
+        backgroundColor: ["#d4a847", "#e05c5c", "#5c9ce0"],
+        borderRadius: 6,
+        barThickness: 42
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => c.parsed.y + "%" } } },
+      scales: { y: { grid: { color: "#1b2430" }, title: { display: true, text: "net return %" } } }
+    }
+  });
+
+  // ---------- Signal frequency ----------
+  new Chart(document.getElementById("cSignals"), {
+    type: "bar",
+    data: {
+      labels: ["Original detector\n(2 years)", "Relaxed XAUUSD M15", "Relaxed XAUUSD M30"],
+      datasets: [{
+        data: [0, 983, 631],
+        backgroundColor: ["#e05c5c", "#d4a847", "#8aa0b5"],
+        borderRadius: 6,
+        barThickness: 42
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => c.parsed.y + " signals / 2y" } } },
+      scales: { y: { beginAtZero: true, grid: { color: "#1b2430" }, title: { display: true, text: "signals per 2 years" } } }
+    }
+  });
+
+  // ---------- Exit anatomy (win-rate illusion) ----------
+  new Chart(document.getElementById("cExits"), {
+    type: "doughnut",
+    data: {
+      labels: ["Take Profit (85, 100% wins)", "Max Duration timeout (86, 31% WR)", "Stop Loss (2)", "Trailing Stop (5)"],
+      datasets: [{
+        data: [85, 86, 2, 5],
+        backgroundColor: ["#4caf7d", "#8aa0b5", "#e05c5c", "#d4a847"],
+        borderColor: "#161d26",
+        borderWidth: 3
+      }]
+    },
+    options: { cutout: "58%", plugins: { legend: { position: "right" } } }
+  });
+
+  // ---------- Phase outcomes ----------
+  const phases = { labels: ["1-6 Build", "7 Validate", "8 Calibrate", "9 Pivot", "10 Mine", "11 Autopsy"],
+    good: [1, 0, 0, 0, 0, 0], bad: [0, 1, 1, 1, 0, 1], warn: [0, 0, 0, 0, 1, 0] };
+  new Chart(document.getElementById("cPhases"), {
+    type: "bar",
+    data: {
+      labels: phases.labels,
+      datasets: [
+        { label: "Built / Passed", data: phases.good, backgroundColor: "#4caf7d", borderRadius: 4, barPercentage: 0.8, stack: "s" },
+        { label: "Failed / NO-GO", data: phases.bad, backgroundColor: "#e05c5c", borderRadius: 4, barPercentage: 0.8, stack: "s" },
+        { label: "Warning / Ambiguous", data: phases.warn, backgroundColor: "#e0a83c", borderRadius: 4, barPercentage: 0.8, stack: "s" }
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      scales: {
+        x: { stacked: true, max: 1, grid: { color: "#1b2430" }, title: { display: true, text: "outcome weight (0 = neutral)" } },
+        y: { stacked: true, grid: { display: false } }
+      }
+    }
+  });
+</script>
+</body>
+</html>

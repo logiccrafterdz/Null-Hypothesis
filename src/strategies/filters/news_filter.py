@@ -1,5 +1,5 @@
 """
-News Filter for Phoenix Protocol Trading System
+News Filter for Null Hypothesis Trading System
 Filters trading signals around major economic news events.
 """
 

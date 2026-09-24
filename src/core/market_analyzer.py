@@ -1,5 +1,5 @@
 """
-Market Analyzer for Phoenix Protocol Trading System
+Market Analyzer for Null Hypothesis Trading System
 Implements Bad Luck Moment detection and market analysis.
 """
 

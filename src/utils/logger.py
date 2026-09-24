@@ -1,5 +1,5 @@
 """
-Logging System for Phoenix Protocol Trading System
+Logging System for Null Hypothesis Trading System
 Provides structured logging with file rotation and console output.
 """
 
@@ -16,7 +16,7 @@ from config.settings import LOGS_DIR, LOG_LEVEL, LOG_TO_FILE, LOG_TO_CONSOLE, LO
 class TradingLogger:
     """Custom logger for trading system with structured formatting."""
     
-    def __init__(self, name: str = "PhoenixProtocol", log_dir: Optional[Path] = None):
+    def __init__(self, name: str = "NullHypothesis", log_dir: Optional[Path] = None):
         """
         Initialize trading logger.
         
@@ -108,7 +108,7 @@ class TradingLogger:
 _logger_instance = None
 
 
-def get_logger(name: str = "PhoenixProtocol") -> TradingLogger:
+def get_logger(name: str = "NullHypothesis") -> TradingLogger:
     """
     Get or create logger instance.
     
@@ -124,7 +124,7 @@ def get_logger(name: str = "PhoenixProtocol") -> TradingLogger:
     return _logger_instance
 
 
-def setup_logger(name: str = "PhoenixProtocol", log_dir: Optional[Path] = None) -> TradingLogger:
+def setup_logger(name: str = "NullHypothesis", log_dir: Optional[Path] = None) -> TradingLogger:
     """
     Setup and return a new logger instance.
     

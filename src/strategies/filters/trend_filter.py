@@ -1,5 +1,5 @@
 """
-Trend Filter for Phoenix Protocol Trading System
+Trend Filter for Null Hypothesis Trading System
 Optional trend-based filter for additional signal confirmation.
 """
 

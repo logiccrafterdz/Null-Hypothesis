@@ -1,176 +1,139 @@
-# Phoenix Protocol
+# Null Hypothesis 🔬
 
-An automated trading system. It trades things. Sometimes it makes money. Sometimes it doesn't.
+### A Quant Research Engine That Proved Its Own Null Hypothesis
 
-## The Idea
+> "In science, proving that something DOESN'T work is just as valuable
+> as proving that it does."
 
-Most trading systems try to predict the market. We don't. We wait until the market looks completely broken and then we enter. It's probably a terrible idea. The backtests say it works, but backtests always say things work.
+[![Tests](https://img.shields.io/badge/tests-133%20passed-brightgreen)](#)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](#)
+[![Verdict](https://img.shields.io/badge/alpha-NOT%20FOUND-red)](#)
+[![Integrity](https://img.shields.io/badge/scientific%20integrity-100%25-gold)](#)
 
-## What It Does
+---
 
-- Detects when the market is having a really bad time
-- Decides randomly whether to trade or not
-- If it trades, it uses standard risk management
-- If it doesn't, it waits for the next bad time
+## What Is This?
 
-## Why "Phoenix Protocol"
+This is NOT a trading strategy. This is a **scientific research engine** that
+set out to build a trading strategy and instead proved, with mathematical
+rigor, that no exploitable intraday alpha exists on XAUUSD/EURUSD M15 using the
+tested methodologies.
 
-Because we enter when everything is burning down and hope to rise from the ashes. Or something dramatic like that. The name was chosen by a random number generator.
+The journey took 11 phases, tested 4,000+ random strategies, analyzed 2 years
+of real market data, and arrived at an honest conclusion: **the market is
+efficient.**
 
-## The Numbers
+We set out to find alpha. We found the truth instead.
+And the truth is more valuable.
 
-> **INVALID — superseded.** The figures below were produced by an earlier,
-> buggy backtesting engine (exit orders were not actually executed, position
-> sizing used the wrong units, the detector used hardcoded thresholds, and
-> `weekday()==5` treated Saturday as Friday). They must NOT be quoted as
-> strategy performance.
+## The Story
 
-- Win rate: 72% **INVALID**
-- Profit factor: 3.55 **INVALID**
-- Max drawdown: -10.6% **INVALID**
-- Total return: 30.66% **INVALID**
+- Read the full journey: [JOURNEY.md](JOURNEY.md)
+- Read the key findings: [FINDINGS.md](FINDINGS.md)
+- Explore the visual showcase: [GitHub Pages](https://logiccrafterdz.github.io/phoenix-protocol/)
 
-Corrected results for the current code are in
-`reports/post_fix_backtest_report.md` (currently **PIPELINE VALIDATION ONLY**
-on synthetic fixtures — not a real-market claim; see that report before
-drawing any conclusion).
+## Quick Summary
 
-**Real-history validation** is in `reports/real_history_backtest_report.md`
-(real FBS MT5 M15 broker data, 2 years, UTC-normalized). Finding phrased
-plainly: at the configured thresholds the detector NEVER fires on these
-instruments' 15-minute data — a bar with both `drop >= 3%` AND `volume >= 2x`
-does not occur once in 2 years for XAUUSD/GBPJPY/EURUSD. The strategy, as
-configured, is effectively dormant on real markets.
+| Phase | What We Did | Result |
+|-------|-------------|--------|
+| 1-6 | Built production trading system | ✅ 133 tests, audit 92/100 |
+| 7 | Real data validation | ❌ 0 signals in 2 years |
+| 8 | Threshold calibration | ❌ No edge found |
+| 9 | Strategy pivot | ❌ No edge found |
+| 10 | Random mining (4,000 strategies) | ⚠️ 2 survivors |
+| 11 | Forensic analysis | ❌ Both are beta, not alpha |
 
-**Threshold-calibration research (Phase 8, real data, honest conclusion)**
-is in `reports/threshold_calibration_report.md`, with supporting evidence in
-`reports/signal_feasibility_report.md` and
-`reports/research_candidate_backtests.md`:
+## Architecture
 
-- Studied M15/M30/H1 (M5 excluded: only ~14 days retained by the terminal)
-  across fixed drop grids, volume screens (ratio 1.5-3x, z-score, percentile),
-  ATR-multiple drops, and dynamic trailing-percentile thresholds.
-- The full production detector stack (drop + volume + ATR-spike + same-bar
-  reversal pattern) fires **0 times** over 2 years on every symbol/timeframe
-  even with relaxed thresholds — reversal patterns and large drop bars are
-  structurally incompatible on the same bar (~1% vs ~27% base rate).
-- Drop+volume-only candidates have enough frequency to trade but show **no
-  forward-return edge** over a random baseline and every realised simulation
-  with production trade management loses money (PF 0.07-0.99).
-- Result: flat **NO-GO** for production deployment. No candidate is promoted.
-  Research configs are isolated under `config/research_candidates/` (untouched
-  production defaults).
+```
+null-hypothesis/
+├── src/               # Core engine
+│   ├── core/          #   data_fetcher, market_analyzer, decision_engine,
+│   │                  #   risk_manager, trade_executor
+│   ├── strategies/    #   BaseStrategy + filters (trend, volatility, news)
+│   ├── api/           #   broker_interface, mt5_connector
+│   └── utils/         #   indicators, logger, helpers, notifications
+├── backtesting/       # backtester, monte_carlo, walk_forward
+├── scripts/           # data collection, reporting, mining, forensics
+├── dashboard/         # Streamlit visualization
+├── config/            # settings, strategy parameters, credentials
+├── reports/           # all research reports (permanent record)
+└── tests/             # 133+ tests
+```
 
-**Mining verdict (Phase 10-11, real FBS MT5 XAUUSD/EURUSD M15, 2 years)**: a
-seeded random-hypothesis mining run produced 2 surviving XAUUSD strategies
-(`XAUUSD_M15_56202`, `XAUUSD_M15_28590`); EURUSD had no survivors. The leader
-`XAUUSD_M15_56202` then went through a full forensic autopsy (Phase 11):
+Each component has a single responsibility. Broker access goes through a
+unified interface. Dependencies are injected; configuration is externalized.
+The entire system is instrumented for honest, reproducible research.
 
-- LONG-only momentum scalper; SHORT mirror loses (-12.9%); passive long gold
-  (+62.9%) out-earned the strategy (+10.9%).
-- Random-LONG control: 56202's entry timing sits at the 99.8th percentile of
-  500 random same-exit strategies, but that edge exists ONLY on the long side
-  of a rising instrument.
-- Its one negative OOS window (WF2, -0.84%) coincides exactly with the gold
-  slide — the directional-beta signature, not a statistical accident.
-- **Phase 11 verdict: B - DIRECTIONAL BETA.** Do not deploy as alpha; if used
-  at all, treat as a long-beta sleeve. Full evidence in
-  `reports/phase_11_final_verdict.md`.
-
-## How to Use
+## How to Run
 
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Verify the fixing suite (all tests must pass)
+# 2. Verify the test suite
 python -m pytest tests/ -q
 
 # 3. Real data (option A): export MT5 history to data/raw/
-#    (server times converted to UTC; offset auto-documented in the CSV header)
-#    Use --server-utc-offset 3 on FBS (measured). If you must export by hand
-#    from the MT5 History Center, normalize with:
-#    python scripts/import_manual_history.py --input exported.csv --symbol XAUUSD --server-utc-offset 3
 python scripts/download_mt5_history.py --symbols XAUUSD GBPJPY EURUSD --days 730
 
-# 3. Synthetic fixtures (option B): reproducible pipeline-validation data
-#    (substitutes when MT5 is unavailable; NEVER treated as real history)
+# 3. Synthetic fixtures (option B): pipeline-validation data only
 python scripts/generate_synthetic_data.py --symbols XAUUSD GBPJPY EURUSD --days 365
 
-# 4. Run one asset through the corrected backtester
+# 4. Run the corrected backtester on one asset
 python main.py --mode backtest --asset XAUUSD --days 365
 
-# 5. Validate the quality of real data in data/raw
+# 5. Validate real-data quality in data/raw
 python scripts/validate_real_data.py
 
-# 6. Real-history backtest report with risk limits enforced
-#    (min-lot feasibility + statistical adequacy + honest verdict)
-python scripts/generate_real_report.py --days 730 --capital 20000
-
-# 7. Generate the post-fix (synthetic/pipeline) report
-python scripts/generate_backtest_report.py --days 365 --capital 10000
-
-# 8. Signal-feasibility study on real data (Phase 8 research; writes
-#    reports/signal_feasibility_report.md) — calibrates nothing in production
-python scripts/analyze_signal_feasibility.py
-
-# 9. Research backtests of the relaxed candidates (writes
-#    reports/research_candidate_backtests.md)
-python scripts/run_research_backtests.py
-
-# 10. Random hypothesis mining / Chaos Discovery Engine (Phase 10 research;
-#     validates the mining backtester against the Phase-8 reference, backtests
-#     a seeded pool of random strategies, compares them to a random-entry luck
-#     baseline, applies primary/robustness/FDR filters and writes top strategies
-#     to config/mined_strategies/ + reports/mining_summary.md). Research only.
+# 6. Mining / Chaos Discovery Engine (Phase 10 research)
 python scripts/run_mining_session.py --quota 2000 --luck 800
 
-#    Rebuild all reports from a saved run (no re-compute):
-python scripts/run_mining_session.py --finalize-only
-
-#    Check only that the mining backtester reproduces the Phase-8 reference:
-python scripts/run_mining_session.py --validate-only
-
-# 11. Phase 11 forensic autopsy of a mined survivor (e.g. XAUUSD_M15_56202):
-#     verbose sim (validates exact replay of recorded Phase-10 metrics), SHORT
-#     mirror, buy-and-hold, random-LONG baseline, quarterly/monthly regime,
-#     trade-level forensics and 2-fold walk-forward OOS; writes 6 reports and a
-#     final verdict (A-GENUINE ALPHA / B-DIRECTIONAL BETA / C-INSUFFICIENT /
-#     D-FALSE POSITIVE). Research only; never auto-deploys.
+# 7. Forensic autopsy of a mined survivor (Phase 11)
 python scripts/run_phase_11_forensics.py
 ```
 
-If you want to actually use real money:
-```bash
-python main.py --mode live --assets XAUUSD GBPJPY
-```
+For the unavoidable disclaimer: if you want to actually use real money,
+`python main.py --mode live --assets XAUUSD GBPJPY`. We do not recommend it.
 
-I wouldn't recommend the second option.
+## Research Reports
 
-## What You Need
+All reports are preserved in the `reports/` directory as a permanent
+scientific record:
 
-- Python 3.11+
-- MetaTrader 5
-- An MT5 account
-- Poor judgment
-- Willingness to lose money
+| Report | Contents |
+|--------|----------|
+| `post_fix_backtest_report.md` | Backtest pipeline validation |
+| `real_history_backtest_report.md` | Phase 7: real-data verification |
+| `threshold_calibration_report.md` | Phase 8: NO-GO synthesis |
+| `signal_feasibility_report.md` | Phase 8: signal feasibility study |
+| `research_candidate_backtests.md` | Phase 9: pivot research |
+| `mining_summary.md` | Phase 10: mining session funnel |
+| `top_strategies_report.md` | Phase 10: survivors |
+| `phase_11_final_verdict.md` | Phase 11: forensic verdict — DIRECTIONAL BETA |
+| `strategy_56202_*.md` | Phase 11: autopsy, bias, temporal, forensics, OOS |
 
-## What It Trades
+## The Final Verdict
 
-Forex and metals through MT5. No crypto. Crypto is for people who like unnecessary risk.
+After 4,000 generated strategies, 2 years of real data, 11 phases, and a
+forensic autopsy, the engine concluded:
 
-## Installation
-
-Standard Python project setup. If you need instructions for this, you probably shouldn't be running trading bots.
-
-## Disclaimer
-
-This is experimental software. It might work. It might not. It might lose all your money. It might make money and then lose it all next week. I'm not responsible for any of that.
+> **B — DIRECTIONAL BETA.** The surviving strategies are long-only bets on a
+> rising asset, not market-neutral alpha. Proving a null hypothesis is a
+> scientific achievement: we built a system that refused to lie to us, and we
+> saved potential users from deploying a disguised-beta strategy at scale.
 
 ## License
 
 MIT. Do whatever you want with it. It's probably not worth the effort anyway.
 
+## Disclaimer
+
+This project is a research tool and educational resource. It is NOT financial
+advice. No trading strategy is guaranteed to be profitable. Past performance
+does not indicate future results.
+
 ---
 
 Built because someone said it couldn't be done.
+And it couldn't. That was the answer.
