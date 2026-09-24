@@ -61,6 +61,22 @@ is in `reports/threshold_calibration_report.md`, with supporting evidence in
   Research configs are isolated under `config/research_candidates/` (untouched
   production defaults).
 
+**Mining verdict (Phase 10-11, real FBS MT5 XAUUSD/EURUSD M15, 2 years)**: a
+seeded random-hypothesis mining run produced 2 surviving XAUUSD strategies
+(`XAUUSD_M15_56202`, `XAUUSD_M15_28590`); EURUSD had no survivors. The leader
+`XAUUSD_M15_56202` then went through a full forensic autopsy (Phase 11):
+
+- LONG-only momentum scalper; SHORT mirror loses (-12.9%); passive long gold
+  (+62.9%) out-earned the strategy (+10.9%).
+- Random-LONG control: 56202's entry timing sits at the 99.8th percentile of
+  500 random same-exit strategies, but that edge exists ONLY on the long side
+  of a rising instrument.
+- Its one negative OOS window (WF2, -0.84%) coincides exactly with the gold
+  slide — the directional-beta signature, not a statistical accident.
+- **Phase 11 verdict: B - DIRECTIONAL BETA.** Do not deploy as alpha; if used
+  at all, treat as a long-beta sleeve. Full evidence in
+  `reports/phase_11_final_verdict.md`.
+
 ## How to Use
 
 ```bash
@@ -114,6 +130,14 @@ python scripts/run_mining_session.py --finalize-only
 
 #    Check only that the mining backtester reproduces the Phase-8 reference:
 python scripts/run_mining_session.py --validate-only
+
+# 11. Phase 11 forensic autopsy of a mined survivor (e.g. XAUUSD_M15_56202):
+#     verbose sim (validates exact replay of recorded Phase-10 metrics), SHORT
+#     mirror, buy-and-hold, random-LONG baseline, quarterly/monthly regime,
+#     trade-level forensics and 2-fold walk-forward OOS; writes 6 reports and a
+#     final verdict (A-GENUINE ALPHA / B-DIRECTIONAL BETA / C-INSUFFICIENT /
+#     D-FALSE POSITIVE). Research only; never auto-deploys.
+python scripts/run_phase_11_forensics.py
 ```
 
 If you want to actually use real money:
