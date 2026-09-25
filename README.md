@@ -23,7 +23,7 @@ constraints.
 The journey took 11 phases, tested 4,000+ random strategies, analyzed 2 years
 of real market data, and arrived at an honest conclusion: **no exploitable
 intraday M15 alpha was detected under the tested methodologies** — a failure
-to reject the null hypothesis, not a claim that markets are always efficient.
+to reject the null hypothesis, scoped to the tested search space.
 
 We set out to find alpha. We found the truth instead.
 And the truth is more valuable.

@@ -52,17 +52,17 @@ A structural barrier, not a parameter problem.
 
 GBPJPY refused 100% of signals even at a $100,000 account size.
 
-## Finding 4: EURUSD M15 is Perfectly Efficient
+## Finding 4: No Candidate Survived the Tested Pipeline on EURUSD
 
-The most conclusive efficiency result in the project.
+The cleanest negative result in the project.
 
 - 2,000 random strategies generated on EURUSD M15.
 - **Zero** survived the primary filter — not even a false positive.
 - The luck baseline itself was deeply negative (mean -18.2%).
 - FDR correction found nothing to correct: nothing survived to be wrong.
 
-EURUSD M15 is the strongest evidence in this study that liquid FX is
-informationally efficient at the intraday level.
+Among the assets and search space tested, EURUSD M15 produced the strongest
+negative signal: under the tested discovery pipeline, no candidate survived.
 
 ## Finding 5: Random Mining Finds Only Directional Beta
 

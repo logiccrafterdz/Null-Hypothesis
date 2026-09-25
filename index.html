@@ -359,7 +359,7 @@
       When reversed, the identical strategy <b class="neg">lost money</b>. A passive "buy and hold" made
       <b class="pos">6×</b> more than the best mined strategy. Every statistical filter was passed —
       and the forensic autopsy still detected no alpha. The null hypothesis was <b>not rejected</b>.</p>
-      <p style="color:var(--text-faint);font-size:.85rem;margin-top:14px">Scope: XAUUSD &amp; EURUSD · 2 years of real M15 data · the detectors, filters, mining rules and constraints we built. This is a failure to reject the null — not a proof that markets are efficient everywhere or always.</p>
+      <p style="color:var(--text-faint);font-size:.85rem;margin-top:14px">Scope: XAUUSD &amp; EURUSD · 2 years of real M15 data · the detectors, filters, mining rules, search space and constraints we built. A failure to reject the null — no exploitable M15 alpha was detected under the tested search space.</p>
     </div>
   </div>
 </section>
@@ -530,7 +530,7 @@
             <tr><td>Primary filter survivors</td><td>3</td><td class="neg">0</td></tr>
             <tr><td>Robustness survivors</td><td>2</td><td class="neg">0</td></tr>
             <tr><td>FDR + p95 survivors</td><td>2</td><td class="neg">0</td></tr>
-            <tr class="hl"><td>Top N</td><td>2</td><td class="neg">0 — perfectly efficient</td></tr>
+            <tr class="hl"><td>Top N</td><td>2</td><td class="neg">0 — no candidate survived</td></tr>
           </table>
         </div>
       </div>
@@ -798,7 +798,7 @@
       <div class="sec-eyebrow">Lessons Learned</div>
       <h2 class="sec-title">What the Journey Taught Us</h2>
     </div>
-    <div class="lesson"><div class="qq">📉</div><div class="lt">Under our methods, data and constraints, a <b>4,000-strategy search</b> across two liquid instruments detected zero exploitable intraday M15 alpha. We failed to reject the null hypothesis — we did not "prove" that markets are efficient everywhere.</div></div>
+    <div class="lesson"><div class="qq">📉</div><div class="lt">Under our methods, data, search space and constraints, a <b>4,000-strategy search</b> across two liquid instruments detected zero exploitable intraday M15 alpha. We failed to reject the null hypothesis — no exploitable M15 alpha was detected under the tested search space.</div></div>
     <div class="lesson"><div class="qq">🎭</div><div class="lt">Most "strategies" sold commercially are <b>disguised beta</b>. Ours was — and we only found out because we ran the SHORT-mirror and buy-and-hold controls nobody else runs.</div></div>
     <div class="lesson"><div class="qq">🧮</div><div class="lt">A 65% win rate can be a <b>presentation artifact</b>: winners clipped tiny, losers allowed to bleed, asymmetric risk hiding asymmetric reward.</div></div>
     <div class="lesson"><div class="qq">🎲</div><div class="lt">Random mining + statistical correction is the <b>only honest method</b>. Measure chance, control the false-discovery rate, then autopsy the survivors.</div></div>

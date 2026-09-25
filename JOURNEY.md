@@ -203,12 +203,12 @@ The funnel for XAUUSD:
 
 The funnel for EURUSD:
 > **2,000 generated → 0. ZERO.** Not one strategy survived even the first
-> filter. EURUSD M15, it turns out, is *perfectly efficient* — not even a
-> false positive made it through FDR correction.
+> filter. No candidate survived the tested discovery pipeline on EURUSD —
+> not even a false positive made it through FDR correction.
 
-The system could not have been more efficient if it had been designed to make
-us look foolish. EURUSD refuses to yield anything at all. XAUUSD yields two
-survivors — both LONG-only strategies on a rising asset.
+Under the tested search space, EURUSD yielded nothing at all — not one
+candidate passed the discovery pipeline. XAUUSD yielded two survivors — both
+LONG-only strategies on a rising asset.
 
 The two survivors in the XAUUSD top list:
 
@@ -289,9 +289,9 @@ honestly exposed.
 The final truth of this project is worth far more than a working strategy
 would have been:
 
-1. **The market is more efficient than we imagined.** A two-year, four-thousand
-   strategy search across two major liquid instruments found exactly **zero**
-   exploitable intraday M15 alpha.
+1. **No exploitable M15 alpha was detected under the tested search space.** A
+   two-year, four-thousand strategy search across two major liquid instruments
+   found exactly **zero** exploitable intraday M15 alpha.
 
 2. **Most "strategies" sold commercially are disguised beta.** Ours was. We
    only found out because we did the SHORT mirror test and the buy-and-hold
