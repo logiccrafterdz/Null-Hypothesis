@@ -9,7 +9,7 @@ import os
 
 # Project identity
 PROJECT_NAME = "Null Hypothesis"
-PROJECT_TAGLINE = "A Quant Research Engine That Failed to Reject Its Own Null Hypothesis"
+PROJECT_TAGLINE = "A Quant Research Engine for Testing Intraday Alpha"
 
 # Base paths
 BASE_DIR = Path(__file__).parent.parent

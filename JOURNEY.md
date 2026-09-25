@@ -1,6 +1,6 @@
 # Null Hypothesis: The Journey
 
-## A Quant Research Engine That Failed to Reject Its Own Null Hypothesis
+## A Quant Research Engine for Testing Intraday Alpha
 
 > We set out to find alpha. We found the truth instead.
 > And the truth is more valuable.

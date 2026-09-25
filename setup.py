@@ -11,7 +11,7 @@ setup(
     name="null-hypothesis",
     version="1.0.0",
     author="Null Hypothesis Team",
-    description="A quant research engine that set out to find alpha and failed to reject its own null hypothesis instead",
+    description="A quant research engine for testing intraday alpha — no robust exploitable alpha detected within the tested research space",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
