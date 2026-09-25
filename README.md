@@ -1,6 +1,6 @@
 # Null Hypothesis 🔬
 
-### A Quant Research Engine That Proved Its Own Null Hypothesis
+### A Quant Research Engine That Failed to Reject Its Own Null Hypothesis
 
 > "In science, proving that something DOESN'T work is just as valuable
 > as proving that it does."
@@ -15,13 +15,15 @@
 ## What Is This?
 
 This is NOT a trading strategy. This is a **scientific research engine** that
-set out to build a trading strategy and instead proved, with mathematical
-rigor, that no exploitable intraday alpha exists on XAUUSD/EURUSD M15 using the
-tested methodologies.
+set out to build a trading strategy and instead failed to reject, with
+mathematical rigor, the null hypothesis that no exploitable intraday alpha
+exists on XAUUSD/EURUSD M15 under the tested methodologies, data, and
+constraints.
 
 The journey took 11 phases, tested 4,000+ random strategies, analyzed 2 years
-of real market data, and arrived at an honest conclusion: **the market is
-efficient.**
+of real market data, and arrived at an honest conclusion: **no exploitable
+intraday M15 alpha was detected under the tested methodologies** — a failure
+to reject the null hypothesis, not a claim that markets are always efficient.
 
 We set out to find alpha. We found the truth instead.
 And the truth is more valuable.

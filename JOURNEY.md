@@ -1,6 +1,6 @@
 # Null Hypothesis: The Journey
 
-## A Quant Research Engine That Proved Its Own Null Hypothesis
+## A Quant Research Engine That Failed to Reject Its Own Null Hypothesis
 
 > We set out to find alpha. We found the truth instead.
 > And the truth is more valuable.
@@ -317,10 +317,10 @@ would have been:
    forensically. That engine can test ANY future hypothesis honestly — and was
    itself only made trustworthy by this journey of proving hypotheses wrong.
 
-The null hypothesis — "no exploitable edge exists" — was stated, tested,
-stressed, and **confirmed** by its own engine. That is not failure. That is
-the rarest thing in quantitative trading: a definitive, reproducible, honest
-answer.
+The null hypothesis — "no exploitable edge exists under the tested methods" —
+was stated, tested, and stressed by its own engine, and it was **not rejected**.
+That is not failure. That is the rarest thing in quantitative trading: a
+definitive, reproducible, honest answer.
 
 We set out to find alpha. We found the truth instead. The truth is worth more.
 

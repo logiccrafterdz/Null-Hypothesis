@@ -1,8 +1,8 @@
 # Key Findings
 
-A data-driven summary of what eleven phases of quant research proved.
-Every number below is reproducible from the code and reports in this
-repository.
+A data-driven summary of what eleven phases of quant research detected —
+and what they did not. Every number below is reproducible from the code and
+reports in this repository.
 
 ---
 
